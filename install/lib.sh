@@ -9,6 +9,7 @@ KIT_ENV="${KIT_ENV:-$KIT_DIR/kit.env}"
 KIT_STATE="${KIT_STATE:-$KIT_DIR/state}"
 
 # Códigos de saída padronizados (a skill /infra:verificar lê estes valores).
+# shellcheck disable=SC2034  # usados pelas etapas que fazem source desta lib
 readonly EXIT_OK=0 EXIT_FAIL=1 EXIT_CONFIG=2 EXIT_PRECONDITION=3
 
 log()  { printf '[infra-kit] %s\n' "$*"; }
@@ -18,8 +19,10 @@ fail() { printf '[falha] %s\n' "$1" >&2; exit "${2:-$EXIT_FAIL}"; }
 
 load_env() {
   [ -f "$KIT_ENV" ] || fail "kit.env não encontrado em $KIT_ENV (rode o /infra:instalar)" "$EXIT_CONFIG"
+  set -a
   # shellcheck disable=SC1090
-  set -a; . "$KIT_ENV"; set +a
+  . "$KIT_ENV"
+  set +a
 }
 
 require_var() {
