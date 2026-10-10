@@ -13,8 +13,9 @@ check_os() {
   local file="${1:-/etc/os-release}" id version
   id="$(sed -n 's/^ID=//p' "$file" | tr -d '"')"
   version="$(sed -n 's/^VERSION_ID=//p' "$file" | tr -d '"')"
-  [ "$id" = "ubuntu" ] && [ "$version" = "24.04" ] ||
+  if [ "$id" != "ubuntu" ] || [ "$version" != "24.04" ]; then
     fail "sistema ${id:-?} ${version:-?} não suportado: o kit só roda em Ubuntu 24.04" "$EXIT_PRECONDITION"
+  fi
 }
 
 # Avalia recursos. Uso: check_resources <cpus> <mem_mb> <disk_gb>
@@ -47,7 +48,7 @@ main() {
   require_root
   load_env
   require_var KIT_DOMAIN
-  check_os
+  check_os /etc/os-release
   check_resources "$(nproc)" \
     "$(awk '/^MemTotal:/ {print int($2/1024)}' /proc/meminfo)" \
     "$(df -BG --output=size / | tail -1 | tr -dc '0-9')"
