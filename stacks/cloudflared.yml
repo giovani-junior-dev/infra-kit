@@ -1,0 +1,19 @@
+# Túnel da Cloudflare (etapa 30). Sem porta publicada: só conexões de saída.
+# Lição L2: toda porta e secret declarados aqui; o Portainer reaplica o arquivo inteiro.
+# TODO(release): fixar por digest (image: ...@sha256:...).
+services:
+  cloudflared:
+    image: cloudflare/cloudflared:2026.10.0
+    command: [tunnel, --no-autoupdate, run, --token-file, /run/secrets/cf_tunnel_token]
+    secrets: [cf_tunnel_token]
+    networks: [infra_net]
+    deploy:
+      replicas: 1
+      resources: { limits: { memory: 256M } }
+      restart_policy: { condition: any }
+
+secrets:
+  cf_tunnel_token: { external: true }
+
+networks:
+  infra_net: { external: true }

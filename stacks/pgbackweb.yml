@@ -1,0 +1,32 @@
+# PG Back Web (etapa 60). Sem porta: https://pgbackweb.<domínio> via túnel + Access.
+# A imagem não lê *_FILE; o entrypoint exporta as envs a partir dos secrets
+# (lição L1: nada de senha em texto na definição da stack).
+# TODO(release): fixar por digest.
+services:
+  pgbackweb:
+    image: eduardolat/pgbackweb:0.5.2
+    entrypoint: [/bin/sh, -c]
+    command:
+      - >-
+        export PBW_ENCRYPTION_KEY="$$(cat /run/secrets/pbw_encryption_key)"
+        PBW_POSTGRES_CONN_STRING="$$(cat /run/secrets/pbw_conn_string)"
+        && exec task servem
+    environment:
+      TZ: America/Sao_Paulo
+      PBW_LISTEN_PORT: "8085"
+    secrets: [pbw_encryption_key, pbw_conn_string]
+    volumes: [pgbackweb_backups:/backups]
+    networks: [infra_net]
+    deploy:
+      replicas: 1
+      resources: { limits: { memory: 512M } }
+
+secrets:
+  pbw_encryption_key: { external: true }
+  pbw_conn_string: { external: true }
+
+volumes:
+  pgbackweb_backups:
+
+networks:
+  infra_net: { external: true }
