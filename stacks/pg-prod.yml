@@ -20,7 +20,8 @@ services:
       resources: { limits: { memory: 1024M } }
 
 secrets:
-  pg_prod_superuser_pw: { external: true }
+  # nome real vem do kit.env depois de install/ops/rotate-superuser.sh (secret versionado)
+  pg_prod_superuser_pw: { external: true, name: "${KIT_PG_PROD_SUPERUSER_SECRET:-pg_prod_superuser_pw}" }
 
 volumes:
   pg_prod_data:

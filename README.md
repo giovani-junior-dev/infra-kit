@@ -17,6 +17,19 @@ Nenhuma porta aberta além do SSH. Painéis e MCP ficam atrás do Cloudflare Tun
 - Um **domínio na Cloudflare** (plano Free serve; o Zero Trust pede cartão no cadastro, mas o plano Free não cobra)
 - **Claude Code** instalado no seu computador
 
+## Começar
+
+No Claude Code:
+
+```
+/plugin install infra --marketplace giovani-junior-dev/infra-kit
+/infra:instalar
+```
+
+Em versões antigas do Claude Code: `/plugin marketplace add giovani-junior-dev/infra-kit` e depois `/plugin install infra@infra-kit`.
+
+Guia: [antes de começar](docs/01-antes-de-comecar.md) · [Cloudflare](docs/02-cloudflare.md) · [instalação](docs/03-instalacao.md) · [dia a dia](docs/04-dia-a-dia.md) · [problemas](docs/05-problemas.md)
+
 ## Licença
 
 MIT

@@ -1,0 +1,16 @@
+{
+  "name": "infra-kit",
+  "owner": {
+    "name": "giovani-junior-dev"
+  },
+  "metadata": {
+    "description": "Infraestrutura própria numa VPS: Docker Swarm, Postgres prod e homologação, backups e db-mcp."
+  },
+  "plugins": [
+    {
+      "name": "infra",
+      "source": "./plugin",
+      "description": "Instala e opera o infra-kit na sua VPS pelo Claude Code: /infra:instalar, /infra:verificar, /infra:novo-projeto, /infra:trocar-senha."
+    }
+  ]
+}
