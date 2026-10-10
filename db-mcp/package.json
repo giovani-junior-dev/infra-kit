@@ -1,0 +1,29 @@
+{
+  "name": "@infra-kit/db-mcp",
+  "version": "0.1.0",
+  "private": true,
+  "description": "MCP de banco com guardrails: escrita por impacto, DELETE e DDL de produção só com aprovação do dono.",
+  "license": "MIT",
+  "type": "module",
+  "main": "dist/server.js",
+  "engines": { "node": ">=22" },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "start": "node dist/server.js",
+    "test": "vitest run --project unit",
+    "test:integration": "vitest run --project integration",
+    "test:all": "vitest run"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "1.32.1",
+    "pg": "^8.21.0",
+    "zod": "^3.25.76"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.6",
+    "@types/node": "^22.15.0",
+    "@types/pg": "^8.15.5",
+    "typescript": "^5.9.3",
+    "vitest": "^4.1.0"
+  }
+}
