@@ -26,6 +26,18 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+  plugin:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22 }
+      - name: claude plugin validate
+        run: |
+          npm install -g --no-audit --no-fund @anthropic-ai/claude-code
+          claude plugin validate ./plugin --strict
+          claude plugin validate . --strict
+
   db-mcp:
     runs-on: ubuntu-24.04
     defaults:
