@@ -1,0 +1,7 @@
+kit.env
+*.secret
+.env
+.env.*
+node_modules/
+dist/
+coverage/

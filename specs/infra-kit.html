@@ -1,0 +1,590 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Plan: infra-kit — infraestrutura própria para a comunidade</title>
+<style>
+  :root {
+    --bg: #0f172a; --panel: #111c33; --ink: #e2e8f0; --muted: #94a3b8;
+    --accent: #14b8a6; --accent-2: #38bdf8; --warn: #f59e0b; --danger: #f43f5e;
+    --line: #1e293b; --code-bg: #0b1324;
+    --font: "Inter", "Segoe UI", system-ui, sans-serif; --mono: "JetBrains Mono", Consolas, monospace;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 16px/1.65 var(--font); }
+  main { max-width: 980px; margin: 0 auto; padding: 40px 20px 80px; }
+  h1 { font-size: 2.1rem; margin: 0 0 12px; letter-spacing: -.02em; }
+  h1::before { content: ""; display: block; width: 56px; height: 4px; background: var(--accent); margin-bottom: 16px; border-radius: 2px; }
+  h2 { font-size: 1.45rem; margin: 48px 0 12px; padding-bottom: 6px; border-bottom: 1px solid var(--line); color: var(--accent); }
+  h3 { font-size: 1.15rem; margin: 28px 0 8px; }
+  h4 { font-size: 1rem; margin: 20px 0 6px; color: var(--accent-2); }
+  p, li { color: var(--ink); }
+  a { color: var(--accent-2); }
+  code { font-family: var(--mono); font-size: .88em; background: var(--code-bg); padding: 1px 6px; border-radius: 4px; color: #a7f3d0; }
+  pre { background: var(--code-bg); border: 1px solid var(--line); border-radius: 8px; padding: 14px 16px; overflow-x: auto; }
+  pre code { background: none; padding: 0; color: #cbd5e1; }
+  figure { margin: 24px 0; text-align: center; }
+  figure img { max-width: 100%; border-radius: 10px; border: 1px solid var(--line); }
+  figcaption { color: var(--muted); font-size: .9rem; margin-top: 8px; }
+  .meta { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 10px 14px; }
+  .meta summary { cursor: pointer; color: var(--muted); }
+  .meta dl { display: grid; grid-template-columns: 140px 1fr; gap: 4px 12px; margin: 10px 0 0; font-size: .9rem; }
+  .meta dt { color: var(--muted); } .meta dd { margin: 0; word-break: break-word; }
+  .tag { font-size: .72rem; text-transform: uppercase; letter-spacing: .05em; padding: 2px 7px; border-radius: 4px; }
+  .tag.existing { background: #1e3a5f; color: var(--accent-2); }
+  .tag.new { background: #134e4a; color: var(--accent); }
+  .files li { margin: 4px 0; }
+  .phase { background: var(--panel); border: 1px solid var(--line); border-left: 3px solid var(--accent); border-radius: 8px; padding: 6px 20px 16px; margin: 22px 0; }
+  .checklist { list-style: none; padding-left: 0; }
+  .checklist li { margin: 6px 0; padding-left: 4px; }
+  .status { color: var(--warn); background: none; padding: 0 4px 0 0; }
+  .loop { background: #1f1a0b; border: 1px solid #4a3a0f; color: #fde68a; border-radius: 8px; padding: 10px 14px; margin-top: 12px; font-size: .92rem; }
+  table { width: 100%; border-collapse: collapse; margin: 12px 0; font-size: .92rem; }
+  th, td { border: 1px solid var(--line); padding: 8px 10px; text-align: left; vertical-align: top; }
+  th { background: var(--panel); color: var(--accent); }
+  .callout { background: #0b2a2a; border: 1px solid #115e59; border-radius: 8px; padding: 12px 16px; margin: 14px 0; }
+  .callout.danger { background: #2a0b14; border-color: #7f1d1d; }
+  details { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 10px 14px; margin: 8px 0; }
+  details summary { cursor: pointer; font-weight: 600; }
+  .qa-answer { color: var(--muted); }
+</style>
+</head>
+<body>
+<main>
+
+  <header>
+    <h1>Plan: infra-kit — infraestrutura própria para a comunidade</h1>
+    <details class="meta">
+      <summary>Metadata</summary>
+      <dl>
+        <dt>created</dt>      <dd>2026-10-10T19:30:00Z</dd>
+        <dt>modified</dt>     <dd>2026-10-10T19:30:00Z, 2026-10-10T20:10:00Z</dd>
+        <dt>commits</dt>      <dd>—</dd>
+        <dt>agent name</dt>   <dd>claude-opus-5-5 (sessão mcp-dbmcp)</dd>
+        <dt>session id</dt>   <dd>d585175b-04ce-4bce-878b-03978b6119b5</dd>
+        <dt>back refs</dt>    <dd>WhatsSendMessgae/docs/specs/db-mcp-guardrails.html, WhatsSendMessgae/docs/PRODUCTION-RUNBOOK.md, PRs #524 #526 #527 #528 #530 #531, Kaneo #450 #452</dd>
+        <dt>forward refs</dt> <dd>—</dd>
+      </dl>
+    </details>
+  </header>
+
+  <figure>
+    <!-- IMAGEM PENDENTE (infra-kit/hero.png): Um servidor Ubuntu com Postgres prod, Postgres homolog, backups e MCP, protegido pela Cloudflare -->
+    <figcaption>Um servidor, tudo dentro, nada aberto para a internet além do SSH.</figcaption>
+  </figure>
+
+  <section id="purpose">
+    <h2>Purpose</h2>
+    <p>Dar aos alunos da comunidade a mesma infraestrutura que roda o WaBlast hoje, sem Supabase e sem serviço de terceiros no caminho dos dados: Docker Swarm + Portainer, Postgres de produção, Postgres de homologação (<code>pg-homolog</code>), backups com PG Back Web, e o <strong>db-mcp</strong> (MCP de banco com guardrails e aprovação do dono) acessível pelo Claude Code do aluno. Tudo instalado por um <strong>repositório público</strong> de scripts idempotentes, conduzido por um <strong>plugin do Claude Code</strong>.</p>
+    <p>Decisões do dono (2026-10-10): <strong>1 servidor</strong> por padrão (opção de separar o banco depois) · <strong>Ubuntu 24.04</strong> como única referência testada · <strong>domínio na Cloudflare obrigatório</strong> · kit <strong>público</strong>.</p>
+  </section>
+
+  <section id="problem">
+    <h2>Problem</h2>
+    <p>A maioria dos alunos depende de Supabase e outros SaaS: custo que cresce com o uso, limites do plano grátis, dado fora do controle deles. Montar a alternativa sozinho é onde eles quebram: Postgres exposto na internet, senha escrita na stack, SSH com root e senha, sem backup testado, sem separação entre homologação e produção. Nós mesmos tropeçamos nisso (incidentes de 2026-06-28 e 2026-10-10). E um agente de IA com acesso de superuser ao banco de produção é um risco que a maioria nem percebe.</p>
+    <figure>
+      <!-- IMAGEM PENDENTE (infra-kit/problem.png): Apps presos a vários serviços de terceiros -->
+      <figcaption>Dependência de terceiros: custo, limite e dado fora de controle.</figcaption>
+    </figure>
+  </section>
+
+  <section id="solution">
+    <h2>Solution</h2>
+    <p>Um repositório público <code>infra-kit</code> com três camadas:</p>
+    <ol>
+      <li><strong>Scripts idempotentes por etapa</strong> (bash, rodam no servidor) + <strong>stacks Docker</strong> prontas. Rodar duas vezes não estraga nada; cada etapa termina com uma verificação.</li>
+      <li><strong>db-mcp extraído</strong> do monorepo do WaBlast para um pacote próprio, genérico, publicado como <strong>imagem Docker</strong> (ghcr.io). Sobe como mais uma stack.</li>
+      <li><strong>Plugin do Claude Code</strong> com 4 skills (<code>/infra:instalar</code>, <code>/infra:verificar</code>, <code>/infra:novo-projeto</code>, <code>/infra:trocar-senha</code>) que entrevistam o aluno, rodam os scripts por SSH em ordem e explicam cada erro em português simples.</li>
+    </ol>
+    <p>Princípio de rede: <strong>zero porta pública além do SSH</strong>. Portainer, PG Back Web e db-mcp ficam atrás de Cloudflare Tunnel (saída do servidor, sem porta de entrada) + Cloudflare Access. Postgres nunca é alcançável de fora.</p>
+    <figure>
+      <!-- IMAGEM PENDENTE (infra-kit/solution.png): Plugin no laptop do aluno instala o servidor em etapas -->
+      <figcaption>O aluno roda um comando; o plugin conduz as cinco etapas e confere cada uma.</figcaption>
+    </figure>
+  </section>
+
+  <section id="files" class="files">
+    <h2>Relevant Files</h2>
+
+    <h3>Existing Files (fonte, no repo WhatsSendMessgae em origin/main)</h3>
+    <ul>
+      <li><span class="tag existing">existing</span> <code>apps/db-mcp/src/**</code> — código do db-mcp a extrair (access.ts, approval/*, guard/*, tools/*, targets.ts, runtime.ts, crypto.ts, pg-tools.ts)</li>
+      <li><span class="tag existing">existing</span> <code>apps/db-mcp/control-migrations/001..004-*.sql</code> — migrations do banco de controle <code>mcp_control</code></li>
+      <li><span class="tag existing">existing</span> <code>apps/db-mcp/src/approval/notify.ts</code> — aviso hoje amarrado à API do WaBlast (<code>WABLAST_NOTIFY_*</code>); vira webhook genérico</li>
+      <li><span class="tag existing">existing</span> <code>tests/apps/db-mcp/*.test.ts</code> — 151 testes unitários + 33 de integração a portar</li>
+      <li><span class="tag existing">existing</span> <code>infra/db-mcp-gateway/roles/create-{rw,executor,ddl,admin}-role.sql</code> — roles <code>mcp_&lt;db&gt;_rw/_exec/_ddl</code> e <code>mcp_admin</code></li>
+      <li><span class="tag existing">existing</span> <code>infra/db-mcp-gateway/control/{schema.sql,create-control-db.sql}</code> — criação do <code>mcp_control</code></li>
+      <li><span class="tag existing">existing</span> <code>infra/db-mcp-gateway/hml/{pg-homolog-stack.yml,mask.sql,create-hml-db.sh}</code> — stack do pg-homolog (já com Docker secret) e máscara de dados</li>
+      <li><span class="tag existing">existing</span> <code>infra/db-mcp-gateway/cloudflared-config.yml</code> — ingress do tunnel com <code>httpHostHeader</code></li>
+      <li><span class="tag existing">existing</span> <code>docs/specs/db-mcp-guardrails.html</code> — spec do db-mcp (limites, aprovação, promote/mirror)</li>
+      <li><span class="tag existing">existing</span> <code>docs/PRODUCTION-RUNBOOK.md</code> — lições operacionais (consumidores, hardening SSH, allowlist)</li>
+    </ul>
+
+    <h3>New Files (repo novo <code>infra-kit</code>)</h3>
+    <ul>
+      <li><span class="tag new">new</span> <code>README.md</code> — o que é, pré-requisitos, custo estimado, 1 comando para começar</li>
+      <li><span class="tag new">new</span> <code>LICENSE</code> — MIT</li>
+      <li><span class="tag new">new</span> <code>install/lib.sh</code> — funções comuns: log, <code>ok/fail</code>, checagem de idempotência, leitura de <code>/opt/infra-kit/kit.env</code></li>
+      <li><span class="tag new">new</span> <code>install/00-preflight.sh</code> — Ubuntu 24.04? RAM/disco mínimos? root/sudo? DNS do domínio na Cloudflare?</li>
+      <li><span class="tag new">new</span> <code>install/10-base.sh</code> — apt upgrade, unattended-upgrades, fail2ban, swap, fuso, usuário <code>deploy</code></li>
+      <li><span class="tag new">new</span> <code>install/15-ssh-hardening.sh</code> — chave só, sem root, sem senha, porta configurável, com trava anti-lockout</li>
+      <li><span class="tag new">new</span> <code>install/20-docker-swarm.sh</code> — Docker CE oficial, <code>swarm init</code>, rede overlay <code>infra_net</code>, regras <code>DOCKER-USER</code></li>
+      <li><span class="tag new">new</span> <code>install/30-cloudflare.sh</code> — tunnel, DNS e apps do Access via API da Cloudflare</li>
+      <li><span class="tag new">new</span> <code>install/40-portainer.sh</code> — Portainer CE atrás do tunnel</li>
+      <li><span class="tag new">new</span> <code>install/50-postgres.sh</code> — secrets + stacks <code>pg-prod</code> e <code>pg-homolog</code>, <code>mcp_admin</code>, <code>mcp_control</code></li>
+      <li><span class="tag new">new</span> <code>install/60-backups.sh</code> — PG Back Web + destino R2 + backup e restore de teste</li>
+      <li><span class="tag new">new</span> <code>install/70-db-mcp.sh</code> — stack do db-mcp, migrations de controle, service token do agente</li>
+      <li><span class="tag new">new</span> <code>install/90-verify.sh</code> — checagem completa com saída JSON (usada pela skill <code>/infra:verificar</code>)</li>
+      <li><span class="tag new">new</span> <code>install/ops/rotate-superuser.sh</code>, <code>install/ops/new-project.sh</code> — operações do dia a dia</li>
+      <li><span class="tag new">new</span> <code>stacks/{portainer,pg-prod,pg-homolog,pgbackweb,cloudflared,db-mcp}.yml</code> — stacks com porta e secret declarados</li>
+      <li><span class="tag new">new</span> <code>db-mcp/</code> — código extraído + <code>Dockerfile</code> + <code>control-migrations/</code> + <code>sql/roles/</code> + testes</li>
+      <li><span class="tag new">new</span> <code>.github/workflows/{ci.yml,image.yml}</code> — shellcheck + bats + vitest; build/push da imagem (e2e é manual, Q-D)</li>
+      <li><span class="tag new">new</span> <code>.claude-plugin/marketplace.json</code> + <code>plugin/.claude-plugin/plugin.json</code> — instalação do plugin por <code>/plugin marketplace add</code></li>
+      <li><span class="tag new">new</span> <code>plugin/skills/{instalar,verificar,novo-projeto,trocar-senha}/SKILL.md</code> — as 4 skills</li>
+      <li><span class="tag new">new</span> <code>docs/{01-antes-de-comecar,02-cloudflare,03-instalacao,04-dia-a-dia,05-problemas}.md</code> — guia do aluno em PT-BR</li>
+      <li><span class="tag new">new</span> <code>tests/bats/*.bats</code> — testes dos scripts</li>
+    </ul>
+  </section>
+
+  <section id="phases">
+    <h2>Implementation Phases</h2>
+    <p><strong>IMPORTANT:</strong> Execute every phase and task step by step, in order, top to bottom.</p>
+    <p>Status markers: <code>[]</code> idle · <code>[wip]</code> in progress · <code>[x]</code> complete · <code>[f]</code> failed. All start as <code>[]</code>; the Build Plan workflow updates them as it works.</p>
+
+    <!-- FASE 0 -->
+    <div class="phase">
+      <h3><code class="status">[]</code> Phase 0: Fundação do repositório</h3>
+      <p>Repo público, estrutura de pastas, CI mínima e o contrato de configuração (<code>kit.env</code>) que todas as etapas leem. Contrato fixado ANTES de qualquer script, para as fases 2–6 poderem rodar em paralelo.</p>
+
+      <h4>0.1. Criar o repo</h4>
+      <ul class="checklist">
+        <li><code class="status">[]</code> Criar <code>infra-kit</code> público na conta escolhida (ver Questionables Q-A), licença MIT, branch <code>main</code> protegida (PR + CI verde)</li>
+        <li><code class="status">[]</code> Estrutura: <code>install/ stacks/ db-mcp/ plugin/ docs/ tests/</code></li>
+        <li><code class="status">[]</code> <code>.gitignore</code> com <code>kit.env</code>, <code>*.secret</code>, <code>.env*</code>; gitleaks no CI (lição da limpeza de histórico do WaBlast)</li>
+      </ul>
+
+      <h4>0.2. Contrato de configuração <code>/opt/infra-kit/kit.env</code> (600, root)</h4>
+<pre><code># gerado pelo /infra:instalar — NUNCA versionado
+KIT_DOMAIN=meudominio.com          # zona na Cloudflare
+KIT_OWNER_EMAIL=dono@exemplo.com   # aprovador + login do Access
+KIT_SSH_PORT=2222
+KIT_ADMIN_USER=deploy
+KIT_SUBDOMAINS="portainer pgbackweb db-mcp"
+KIT_CF_ACCOUNT_ID=...
+KIT_CF_TUNNEL_ID=...               # preenchido pela etapa 30
+# senhas NÃO ficam aqui: vão para Docker secrets (etapa 50/70)</code></pre>
+      <ul class="checklist">
+        <li><code class="status">[]</code> <code>install/lib.sh</code>: <code>load_env</code>, <code>require_var</code>, <code>step_done &lt;nome&gt;</code> / <code>mark_done</code> (marcadores em <code>/opt/infra-kit/state/</code>), <code>ok</code>/<code>fail</code> com código de saída padronizado</li>
+        <li><code class="status">[]</code> Toda etapa: <code>set -euo pipefail</code>, re-execução segura, termina com a própria verificação</li>
+      </ul>
+
+      <h4>0.3. CI</h4>
+      <ul class="checklist">
+        <li><code class="status">[]</code> <code>ci.yml</code>: shellcheck em <code>install/**</code>, <code>bats tests/bats</code>, <code>docker compose config</code> em cada stack, gitleaks</li>
+      </ul>
+
+      <h4>0.4. Testing Strategy</h4>
+      <p>CI no GitHub Actions; repo vazio com a estrutura precisa passar.</p>
+      <ul class="checklist">
+        <li><code class="status">[]</code> <code>gh workflow run ci.yml &amp;&amp; gh run watch</code> — CI verde na estrutura base</li>
+        <li><code class="status">[]</code> <code>bats tests/bats/lib.bats</code> — <code>step_done</code>/<code>mark_done</code> e <code>require_var</code> funcionam e falham com mensagem clara</li>
+      </ul>
+      <div class="loop">🔁 <strong>Do not exit this phase until every box above is checked.</strong> If any command fails, fix the cause and re-run — loop until all pass.</div>
+    </div>
+
+    <!-- FASE 1 -->
+    <div class="phase">
+      <h3><code class="status">[]</code> Phase 1: Extrair e generalizar o db-mcp</h3>
+      <p>Copiar <code>apps/db-mcp</code> + SQLs de <code>infra/db-mcp-gateway</code> para <code>infra-kit/db-mcp/</code>, tirar tudo que é do WaBlast, e empacotar como imagem Docker. O WaBlast continua usando a versão dele; nada muda em produção.</p>
+      <figure>
+        <!-- IMAGEM PENDENTE (infra-kit/mcp.png): Agente pede, MCP segura o perigoso até o dono aprovar -->
+        <figcaption>O agente propõe, o db-mcp segura o que é perigoso, o dono aprova pelo celular.</figcaption>
+      </figure>
+
+      <h4>1.1. Cópia com histórico de autoria</h4>
+      <ul class="checklist">
+        <li><code class="status">[]</code> Copiar <code>src/</code>, <code>control-migrations/</code>, <code>tests/apps/db-mcp/</code> e <code>infra/db-mcp-gateway/{roles,control,hml/mask.sql}</code>; nome do pacote <code>@infra-kit/db-mcp</code></li>
+        <li><code class="status">[]</code> Grep de limpeza: <code>wablast|WaBlast|whatsapp_meta|dev-junior|script7</code> → zero ocorrências</li>
+      </ul>
+
+      <h4>1.2. Generalizar</h4>
+      <ul class="checklist">
+        <li><code class="status">[]</code> <code>notify.ts</code>: trocar <code>WABLAST_NOTIFY_*</code> por <code>NOTIFY_WEBHOOK_URL</code> (POST JSON genérico) + adaptador opcional Telegram (<code>NOTIFY_TELEGRAM_BOT_TOKEN</code>/<code>_CHAT_ID</code>). Sem config = só o link na resposta (como hoje)</li>
+        <li><code class="status">[]</code> Suporte a <code>*_FILE</code> em <code>runtime.ts</code>: toda env secreta (<code>APPROVAL_SECRET</code>, <code>DB_MCP_TARGETS_KEY</code>, DSNs) pode vir de arquivo (Docker secret em <code>/run/secrets/…</code>)</li>
+        <li><code class="status">[]</code> DSN padrão 1-servidor: <code>pg-prod_postgres:5432</code> e <code>pg-homolog_postgres:5432</code> pela rede overlay (sem porta publicada)</li>
+        <li><code class="status">[]</code> <code>DB_MCP_PG_BIN_DIR</code> padrão <code>/usr/lib/postgresql/16/bin</code> (cliente PG 16 dentro da imagem)</li>
+        <li><code class="status">[]</code> Migration automática do <code>mcp_control</code> no boot (idempotente, tabela <code>schema_migrations</code>)</li>
+      </ul>
+
+      <h4>1.3. Imagem</h4>
+<pre><code># db-mcp/Dockerfile (esboço)
+FROM node:22-bookworm-slim AS build
+WORKDIR /app
+COPY package*.json tsconfig.json ./
+RUN npm ci
+COPY src ./src
+RUN npm run build &amp;&amp; npm prune --omit=dev
+
+FROM node:22-bookworm-slim
+RUN apt-get update &amp;&amp; apt-get install -y --no-install-recommends postgresql-client-16 \
+ &amp;&amp; rm -rf /var/lib/apt/lists/*      # pg_dump/psql p/ promote e mirror
+WORKDIR /app
+COPY --from=build /app/node_modules ./node_modules
+COPY --from=build /app/dist ./dist
+COPY control-migrations ./control-migrations
+USER node
+EXPOSE 8002
+HEALTHCHECK CMD node -e "fetch('http://127.0.0.1:8002/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
+CMD ["node","dist/server.js"]</code></pre>
+      <ul class="checklist">
+        <li><code class="status">[]</code> <code>image.yml</code>: build multi-arch (amd64/arm64) e push para <code>ghcr.io/giovani-junior-dev/infra-kit-db-mcp:&lt;semver&gt;</code> em tag <code>v*</code></li>
+        <li><code class="status">[]</code> Confirmar no Debian bookworm o pacote do cliente 16 (repo PGDG) — ajustar se precisar</li>
+      </ul>
+
+      <h4>1.4. Testing Strategy</h4>
+      <p>Vitest para unidade; integração contra Postgres 16 real em container de serviço do GitHub Actions; smoke da imagem.</p>
+      <ul class="checklist">
+        <li><code class="status">[]</code> <code>npx vitest run db-mcp/tests</code> — os 151 unitários portados passam</li>
+        <li><code class="status">[]</code> <code>npx vitest run db-mcp/tests --project integration</code> (com <code>services: postgres:16</code>) — os 33 de integração passam, incluindo promote com sequence e mirror</li>
+        <li><code class="status">[]</code> <code>docker run --rm -e ...FILE=... ghcr.io/.../infra-kit-db-mcp:dev</code> + <code>curl /health</code> — imagem sobe lendo secrets de arquivo</li>
+        <li><code class="status">[]</code> Teste novo: notify webhook genérico manda JSON e falha não bloqueia</li>
+        <li><code class="status">[]</code> <code>grep -rniE "wablast|dev-junior|script7" db-mcp/</code> — zero resultados</li>
+      </ul>
+      <div class="loop">🔁 <strong>Do not exit this phase until every box above is checked.</strong> If any command fails, fix the cause and re-run — loop until all pass.</div>
+    </div>
+
+    <!-- FASE 2 -->
+    <div class="phase">
+      <h3><code class="status">[]</code> Phase 2: Servidor base (Ubuntu 24.04)</h3>
+      <p>Etapas 00, 10, 15 e 20. Ao fim: servidor atualizado, SSH só por chave, Docker Swarm ativo, e nenhuma porta de container alcançável de fora.</p>
+      <figure>
+        <!-- IMAGEM PENDENTE (infra-kit/network.png): Firewall fecha tudo menos SSH; tunnel Cloudflare de saída -->
+        <figcaption>Só o SSH entra. Tudo o mais sai pelo tunnel da Cloudflare.</figcaption>
+      </figure>
+
+      <h4>2.1. <code>00-preflight.sh</code></h4>
+      <ul class="checklist">
+        <li><code class="status">[]</code> <code>/etc/os-release</code> = Ubuntu 24.04 (outro → aborta com mensagem; não "tenta mesmo assim")</li>
+        <li><code class="status">[]</code> Mínimo 2 vCPU / 4 GB RAM / 40 GB disco (recomendado 4 GB+; abaixo avisa sobre build e Postgres)</li>
+        <li><code class="status">[]</code> Domínio responde NS da Cloudflare (<code>dig NS $KIT_DOMAIN</code>)</li>
+      </ul>
+
+      <h4>2.2. <code>10-base.sh</code></h4>
+      <ul class="checklist">
+        <li><code class="status">[]</code> <code>apt full-upgrade</code>, <code>unattended-upgrades</code> (só security), <code>fail2ban</code> (sshd), <code>chrony</code>, fuso <code>America/Sao_Paulo</code> (configurável)</li>
+        <li><code class="status">[]</code> Swap de 2–4 GB se não existir (lição: OOM de build na VPS)</li>
+        <li><code class="status">[]</code> Usuário <code>$KIT_ADMIN_USER</code> com sudo e a chave pública do aluno</li>
+      </ul>
+
+      <h4>2.3. <code>15-ssh-hardening.sh</code> com trava anti-lockout</h4>
+<pre><code># drop-in que vence os arquivos do cloud-init (ordem alfabética, 1º valor vence)
+cat &gt;/etc/ssh/sshd_config.d/00-infra-kit.conf &lt;&lt;EOF
+Port ${KIT_SSH_PORT}
+PermitRootLogin no
+PasswordAuthentication no
+KbdInteractiveAuthentication no
+AllowUsers ${KIT_ADMIN_USER}
+EOF
+sshd -t                         # config inválida → aborta sem recarregar
+ufw allow ${KIT_SSH_PORT}/tcp   # ANTES de recarregar
+systemctl reload ssh            # reload: sessões abertas continuam
+# a skill abre UMA NOVA conexão com a chave na porta nova antes de seguir;
+# falhou → rollback automático (remove o drop-in, reload) e avisa</code></pre>
+      <ul class="checklist">
+        <li><code class="status">[]</code> Ubuntu 24.04 usa socket activation do ssh: tratar <code>ssh.socket</code> ao mudar a porta (validar no e2e)</li>
+        <li><code class="status">[]</code> UFW: default deny incoming, allow só <code>$KIT_SSH_PORT</code></li>
+      </ul>
+
+      <h4>2.4. <code>20-docker-swarm.sh</code></h4>
+      <ul class="checklist">
+        <li><code class="status">[]</code> Docker CE pelo repo oficial (não o <code>docker.io</code> do Ubuntu); log driver <code>json-file</code> com <code>max-size=20m,max-file=5</code></li>
+        <li><code class="status">[]</code> <code>docker swarm init --advertise-addr &lt;ip privado ou público&gt;</code>; rede overlay attachable <code>infra_net</code></li>
+        <li><code class="status">[]</code> <strong>Docker ignora o UFW</strong> para portas publicadas. Regras na chain <code>DOCKER-USER</code>: drop de todo tráfego de entrada vindo da interface pública para containers, exceto conexões já estabelecidas. Persistidas por unit systemd que roda após o docker</li>
+      </ul>
+
+      <h4>2.5. Testing Strategy</h4>
+      <p>E2E numa VM Ubuntu 24.04 limpa (Multipass local ou VPS descartável). Testes de rede feitos de FORA do servidor.</p>
+      <ul class="checklist">
+        <li><code class="status">[]</code> <code>ssh -p 22 root@vm</code> e <code>ssh -o PreferredAuthentications=password ...</code> — ambos recusados</li>
+        <li><code class="status">[]</code> <code>ssh -p $KIT_SSH_PORT deploy@vm</code> com chave — funciona</li>
+        <li><code class="status">[]</code> Subir <code>nginx</code> publicado na 8080 e testar <code>curl vm:8080</code> de fora — <strong>bloqueado</strong>; <code>curl localhost:8080</code> dentro — funciona</li>
+        <li><code class="status">[]</code> Rodar 00→20 duas vezes — 2ª execução sem mudanças e sem erro (idempotência)</li>
+        <li><code class="status">[]</code> Simular chave errada na trava anti-lockout — rollback acontece e SSH antigo continua</li>
+      </ul>
+      <div class="loop">🔁 <strong>Do not exit this phase until every box above is checked.</strong> If any command fails, fix the cause and re-run — loop until all pass.</div>
+    </div>
+
+    <!-- FASE 3 -->
+    <div class="phase">
+      <h3><code class="status">[]</code> Phase 3: Cloudflare (tunnel + Access) e Portainer</h3>
+      <p>Etapas 30 e 40. O aluno cria UM API token com escopo mínimo; o script cria tudo e o token pode ser revogado no fim.</p>
+
+      <h4>3.1. <code>30-cloudflare.sh</code></h4>
+      <ul class="checklist">
+        <li><code class="status">[]</code> Token pedido pela skill, passado por stdin, nunca gravado em disco. Escopos: Cloudflare Tunnel:Edit, DNS:Edit (zona), Access: Apps and Policies:Edit, Access: Service Tokens:Edit</li>
+        <li><code class="status">[]</code> Criar tunnel remotamente gerenciado; token do tunnel vira Docker secret <code>cf_tunnel_token</code></li>
+        <li><code class="status">[]</code> CNAMEs <code>portainer.</code>, <code>pgbackweb.</code>, <code>db-mcp.</code> → tunnel; ingress com <code>httpHostHeader</code> (lição do db-mcp)</li>
+        <li><code class="status">[]</code> Access apps: <code>portainer</code> e <code>pgbackweb</code> (policy e-mail do dono); <code>db-mcp</code> (Service Auth, service token <code>agente-1</code>); <code>db-mcp/approve</code> (policy e-mail do dono)</li>
+        <li><code class="status">[]</code> Gravar no <code>kit.env</code>: team domain, AUDs das apps (não são segredo). Client secret do service token mostrado UMA vez para o aluno guardar</li>
+        <li><code class="status">[]</code> Stack <code>cloudflared</code> (1 réplica, rede <code>infra_net</code>, secret do token)</li>
+      </ul>
+
+      <h4>3.2. <code>40-portainer.sh</code></h4>
+      <ul class="checklist">
+        <li><code class="status">[]</code> Portainer CE + agent na <code>infra_net</code>, <strong>sem porta publicada</strong>; acesso só por <code>https://portainer.$KIT_DOMAIN</code></li>
+        <li><code class="status">[]</code> Senha inicial do admin gerada no servidor (<code>--admin-password-file</code>), mostrada uma vez</li>
+        <li><code class="status">[]</code> Aviso no guia: editar stack no Portainer reaplica o arquivo inteiro — porta e secret precisam estar no arquivo (lição 2026-10-10)</li>
+      </ul>
+
+      <h4>3.3. Testing Strategy</h4>
+      <p>Domínio de teste do dono (ver Q-D). Verificação HTTP de fora, com e sem credencial.</p>
+      <ul class="checklist">
+        <li><code class="status">[]</code> <code>curl -sI https://portainer.$KIT_DOMAIN</code> sem login — redireciona para o login do Access (302), nunca 200</li>
+        <li><code class="status">[]</code> <code>curl https://db-mcp.$KIT_DOMAIN/health</code> com headers do service token — 200; sem headers — 403</li>
+        <li><code class="status">[]</code> <code>nmap -p- vm</code> de fora — só <code>$KIT_SSH_PORT</code> aberta</li>
+        <li><code class="status">[]</code> Rodar 30 duas vezes — não duplica tunnel, DNS nem apps (busca por nome antes de criar)</li>
+      </ul>
+      <div class="loop">🔁 <strong>Do not exit this phase until every box above is checked.</strong> If any command fails, fix the cause and re-run — loop until all pass.</div>
+    </div>
+
+    <!-- FASE 4 -->
+    <div class="phase">
+      <h3><code class="status">[]</code> Phase 4: Postgres de produção e homologação</h3>
+      <p>Etapa 50. Dois serviços Postgres 16 (pgvector) no mesmo servidor, senha só em Docker secret, alcançáveis só pela rede overlay.</p>
+
+      <h4>4.1. Stacks</h4>
+<pre><code># stacks/pg-prod.yml (essencial)
+services:
+  postgres:
+    image: pgvector/pgvector:pg16          # fixar digest no release
+    command: [postgres, -c, max_connections=200, -c, password_encryption=scram-sha-256]
+    environment:
+      POSTGRES_PASSWORD_FILE: /run/secrets/pg_prod_superuser_pw
+    secrets: [pg_prod_superuser_pw]
+    volumes: [pg_prod_data:/var/lib/postgresql/data]
+    networks: [infra_net]
+    # SEM ports: — ninguém de fora alcança. Acesso humano: ssh -L via container proxy (4.3)
+    deploy:
+      resources: { limits: { memory: 1024M } }
+secrets:
+  pg_prod_superuser_pw: { external: true }</code></pre>
+      <ul class="checklist">
+        <li><code class="status">[]</code> <code>pg-homolog.yml</code> igual, limite menor (768M), secret <code>pg_homolog_superuser_pw</code></li>
+        <li><code class="status">[]</code> Senhas geradas no servidor (<code>openssl rand -base64 36</code>) direto para <code>docker secret create</code>; nunca impressas</li>
+        <li><code class="status">[]</code> Criar <code>mcp_admin</code> (CREATEDB, CREATEROLE, não superuser) nos dois; banco <code>mcp_control</code> + role <code>mcp_control_rw</code> no prod; senhas como secrets</li>
+      </ul>
+
+      <h4>4.2. Registro de consumidores</h4>
+      <ul class="checklist">
+        <li><code class="status">[]</code> <code>/opt/infra-kit/consumers.json</code>: quem usa cada role/senha (stack, serviço, secret). Toda etapa que cria credencial registra o consumidor. Lição: na rotação de 2026-10-08 descobrimos <code>mytask_tube</code> e <code>bd_comunidade</code> só depois</li>
+      </ul>
+
+      <h4>4.3. Acesso humano ao banco (opcional)</h4>
+      <ul class="checklist">
+        <li><code class="status">[]</code> Comando documentado: <code>ssh -L 5432:...</code> até um socat efêmero na <code>infra_net</code>, ou <code>docker exec -it ... psql</code>. Nunca publicar a porta</li>
+        <li><code class="status">[]</code> App do aluno roda na mesma VPS, como stack na <code>infra_net</code> (Q-E); exemplo no guia</li>
+      </ul>
+
+      <h4>4.4. Testing Strategy</h4>
+      <ul class="checklist">
+        <li><code class="status">[]</code> <code>docker service inspect pg-prod_postgres</code> — env sem <code>POSTGRES_PASSWORD</code> em texto; só <code>_FILE</code></li>
+        <li><code class="status">[]</code> <code>nc -zv vm 5432</code> de fora — recusado</li>
+        <li><code class="status">[]</code> <code>docker run --rm --network infra_net postgres:16 psql -h pg-prod_postgres ...</code> com <code>mcp_admin</code> — conecta; <code>rolsuper=f</code></li>
+        <li><code class="status">[]</code> <code>docker stack deploy</code> de novo com o mesmo arquivo — nada muda, banco não reinicia</li>
+      </ul>
+      <div class="loop">🔁 <strong>Do not exit this phase until every box above is checked.</strong> If any command fails, fix the cause and re-run — loop until all pass.</div>
+    </div>
+
+    <!-- FASE 5 -->
+    <div class="phase">
+      <h3><code class="status">[]</code> Phase 5: Backups (PG Back Web + R2)</h3>
+      <p>Etapa 60. Backup que nunca foi restaurado não é backup: a etapa só passa depois de um restore de teste.</p>
+      <h4>5.1. <code>60-backups.sh</code></h4>
+      <ul class="checklist">
+        <li><code class="status">[]</code> Stack <code>pgbackweb</code> (imagem com digest fixo), banco próprio <code>pgbackweb</code> no prod, <code>PBW_ENCRYPTION_KEY</code> como secret, sem porta, atrás do tunnel</li>
+        <li><code class="status">[]</code> Destino padrão: bucket Cloudflare R2 (S3-compatível; aluno já tem conta). Alternativa: local + aviso de que não protege contra perda do servidor</li>
+        <li><code class="status">[]</code> Guia (com prints) para cadastrar no painel: database prod, destino R2, agenda diária 03:00, retenção 14 dias. A API do PG Back Web só tem <code>/api/v1/health</code> (verificado em <code>internal/view/api/router.go</code>), então a configuração é manual no painel</li>
+        <li><code class="status">[]</code> <code>ops/restore-test.sh</code>: baixa o último dump e restaura num banco temporário no <code>pg-homolog</code>, conta tabelas e apaga</li>
+      </ul>
+      <h4>5.2. Testing Strategy</h4>
+      <ul class="checklist">
+        <li><code class="status">[]</code> Disparar "Run backup now" no painel — execução <code>success</code> e arquivo no R2</li>
+        <li><code class="status">[]</code> <code>ops/restore-test.sh</code> — restaura e confere número de tabelas igual ao prod</li>
+        <li><code class="status">[]</code> <code>curl https://pgbackweb.$KIT_DOMAIN/api/v1/health</code> via Access — 200</li>
+      </ul>
+      <div class="loop">🔁 <strong>Do not exit this phase until every box above is checked.</strong> If any command fails, fix the cause and re-run — loop until all pass.</div>
+    </div>
+
+    <!-- FASE 6 -->
+    <div class="phase">
+      <h3><code class="status">[]</code> Phase 6: db-mcp no ar + Claude Code do aluno</h3>
+      <p>Etapa 70. Sobe a imagem da Fase 1 como stack e conecta o Claude Code do aluno.</p>
+      <h4>6.1. <code>70-db-mcp.sh</code></h4>
+      <ul class="checklist">
+        <li><code class="status">[]</code> Secrets: <code>approval_secret</code>, <code>targets_key</code> (64 hex), DSNs de <code>mcp_admin</code> (prod/hml) e <code>mcp_control_rw</code></li>
+        <li><code class="status">[]</code> Stack <code>db-mcp</code> na <code>infra_net</code>, env não-secreta do <code>kit.env</code> (<code>CF_ACCESS_TEAM_DOMAIN</code>, AUDs, <code>APPROVER_EMAILS</code>, <code>APPROVAL_BASE_URL</code>)</li>
+        <li><code class="status">[]</code> Registrar o agente <code>agente-1</code> em <code>mcp_control.agents</code> (common_name do service token)</li>
+      </ul>
+      <h4>6.2. Configuração do Claude Code</h4>
+<pre><code>claude mcp add --scope user --transport http db-mcp https://db-mcp.$KIT_DOMAIN/mcp \
+  --header "CF-Access-Client-Id: &lt;id&gt;" --header "CF-Access-Client-Secret: &lt;secret&gt;"
+claude mcp get db-mcp     # ✔ Connected</code></pre>
+      <ul class="checklist">
+        <li><code class="status">[]</code> A skill roda o comando na máquina do aluno; o secret é digitado pelo aluno (nunca ecoado no chat)</li>
+      </ul>
+      <h4>6.3. Testing Strategy</h4>
+      <p>Repetir o E2E que fizemos no WaBlast, agora num servidor de aluno.</p>
+      <ul class="checklist">
+        <li><code class="status">[]</code> <code>claude -p "db_create_database teste_kit" --allowedTools mcp__db-mcp</code> — pede aprovação; link abre no Access com o e-mail do dono</li>
+        <li><code class="status">[]</code> DDL direto em hml; <code>DROP</code> pede aprovação; INSERT com <code>RETURNING</code> devolve o id (fix #450)</li>
+        <li><code class="status">[]</code> <code>db_promote_project</code> hml→prod com cópia de tabela; INSERT em prod recebe o próximo id (fix de sequence)</li>
+        <li><code class="status">[]</code> <code>db_mirror_to_homolog</code> — migrations 1:1 nos dois lados</li>
+        <li><code class="status">[]</code> Limpeza do teste deixa <code>mcp_control</code> sem resto</li>
+      </ul>
+      <div class="loop">🔁 <strong>Do not exit this phase until every box above is checked.</strong> If any command fails, fix the cause and re-run — loop until all pass.</div>
+    </div>
+
+    <!-- FASE 7 -->
+    <div class="phase">
+      <h3><code class="status">[]</code> Phase 7: Plugin do Claude Code (4 skills)</h3>
+      <p>O plugin é o "instrutor": não reimplementa nada, só conduz os scripts e traduz erros. Instalação: <code>/plugin marketplace add giovani-junior-dev/infra-kit</code> → <code>/plugin install infra-kit</code>.</p>
+
+      <h4>7.1. <code>/infra:instalar</code></h4>
+      <ul class="checklist">
+        <li><code class="status">[]</code> Entrevista curta: IP, usuário inicial (root ou ubuntu), caminho da chave SSH (gera uma se não existir), domínio, e-mail do dono</li>
+        <li><code class="status">[]</code> Checklist do que o aluno faz fora (com links): domínio na Cloudflare, Zero Trust ativado, API token criado, bucket R2</li>
+        <li><code class="status">[]</code> Envia o repo para o servidor (<code>git clone</code> da tag de release) e roda 00→70 em ordem, uma por vez, mostrando o resultado; parou → explica e oferece retomar da etapa</li>
+        <li><code class="status">[]</code> Nunca pede senha no chat; segredos via stdin ou arquivo temporário apagado</li>
+      </ul>
+      <h4>7.2. <code>/infra:verificar</code></h4>
+      <ul class="checklist">
+        <li><code class="status">[]</code> Roda <code>90-verify.sh</code> (JSON): SSH, UFW, DOCKER-USER, portas abertas, serviços, secrets sem texto puro, <strong>drift</strong> entre stack em uso e arquivo (porta/env), último backup, restore test, db-mcp health. Resume em verde/vermelho com o que fazer</li>
+      </ul>
+      <h4>7.3. <code>/infra:novo-projeto</code></h4>
+      <ul class="checklist">
+        <li><code class="status">[]</code> Usa as tools do db-mcp: cria banco em hml, libera o alvo ao agente, ensina o fluxo hml → aprovação → prod; entrega a connection string do app (role <code>_rw</code>) por arquivo, não pelo chat</li>
+      </ul>
+      <h4>7.4. <code>/infra:trocar-senha</code></h4>
+      <ul class="checklist">
+        <li><code class="status">[]</code> <code>ops/rotate-superuser.sh</code>: gera senha no servidor, <code>ALTER ROLE</code>, cria secret versionado (<code>pg_prod_superuser_pw_v2</code>), atualiza a stack, e percorre <code>consumers.json</code> atualizando cada consumidor. Avisa antes que o update reinicia o Postgres (10–30 s)</li>
+      </ul>
+      <h4>7.5. Testing Strategy</h4>
+      <ul class="checklist">
+        <li><code class="status">[]</code> <code>claude plugin validate</code> (ou equivalente) — manifesto e skills válidos</li>
+        <li><code class="status">[]</code> Rodar <code>/infra:instalar</code> numa VM limpa do zero até o <code>✔ Connected</code>, cronometrar (meta: &lt; 40 min incluindo passos na Cloudflare)</li>
+        <li><code class="status">[]</code> Quebrar de propósito (porta publicada à mão, senha em env) e ver <code>/infra:verificar</code> apontar os dois</li>
+        <li><code class="status">[]</code> <code>/infra:trocar-senha</code> — todos os consumidores conectam depois</li>
+      </ul>
+      <div class="loop">🔁 <strong>Do not exit this phase until every box above is checked.</strong> If any command fails, fix the cause and re-run — loop until all pass.</div>
+    </div>
+
+    <!-- FASE 8 -->
+    <div class="phase">
+      <h3><code class="status">[]</code> Phase 8: Guia do aluno, teste com aluno real e release v1.0</h3>
+      <ul class="checklist">
+        <li><code class="status">[]</code> <code>docs/</code> em PT-BR simples, com prints da Cloudflare (onde clicar), custo estimado (VPS + domínio; Cloudflare Free)</li>
+        <li><code class="status">[]</code> <code>05-problemas.md</code>: os erros que já vivemos e como sair (lockout SSH, porta sumiu após update da stack, link de aprovação expirado em 30 min, OOM no build)</li>
+        <li><code class="status">[]</code> Piloto com 2–3 alunos de níveis diferentes; registrar onde travaram e corrigir antes do anúncio</li>
+        <li><code class="status">[]</code> Tag <code>v1.0.0</code>, imagem publicada, release notes</li>
+      </ul>
+      <h4>8.1. Testing Strategy</h4>
+      <ul class="checklist">
+        <li><code class="status">[]</code> Roteiro de e2e manual (Q-D) numa VPS Ubuntu 24.04 limpa do dono, com o domínio dele: instalação inteira + <code>90-verify.sh</code> 100% verde, antes de cada release</li>
+        <li><code class="status">[]</code> Piloto: os 3 alunos chegam ao <code>✔ Connected</code> sem ajuda direta</li>
+      </ul>
+      <div class="loop">🔁 <strong>Do not exit this phase until every box above is checked.</strong> If any command fails, fix the cause and re-run — loop until all pass.</div>
+    </div>
+  </section>
+
+  <section id="validation">
+    <h2>Validation Commands</h2>
+    <p>Execute these commands to validate the entire plan is complete:</p>
+    <ul class="checklist">
+      <li><code class="status">[]</code> <code>gh run list --workflow ci.yml -L 1</code> — CI verde em main</li>
+      <li><code class="status">[]</code> Roteiro e2e manual — instalação completa numa VPS Ubuntu 24.04 limpa termina com <code>90-verify.sh</code> 100% verde</li>
+      <li><code class="status">[]</code> <code>nmap -p- &lt;ip&gt;</code> de fora — só a porta SSH</li>
+      <li><code class="status">[]</code> <code>docker service inspect</code> de todos os serviços — nenhuma senha em env de texto</li>
+      <li><code class="status">[]</code> <code>claude mcp get db-mcp</code> na máquina do aluno — ✔ Connected; fluxo hml → aprovação → prod funcionando</li>
+      <li><code class="status">[]</code> <code>ops/restore-test.sh</code> — último backup restaura</li>
+      <li><code class="status">[]</code> Re-rodar toda a instalação — zero mudanças (idempotência)</li>
+    </ul>
+    <div class="loop">🔁 <strong>The plan is not complete until every box is checked and every command passes. If for some reason a step is not possible to complete, mark it with [f] and move on if possible.</strong></div>
+  </section>
+
+  <section id="questionables">
+    <h2>Questionables</h2>
+    <details>
+      <summary>Q-A · Em qual conta do GitHub o repo público fica? — RESOLVIDA</summary>
+      <p class="qa-answer">Dono (2026-10-10): <code>giovani-junior-dev</code>. Repo <code>giovani-junior-dev/infra-kit</code>, imagem <code>ghcr.io/giovani-junior-dev/infra-kit-db-mcp</code>, plugin via <code>/plugin marketplace add giovani-junior-dev/infra-kit</code>.</p>
+    </details>
+    <details>
+      <summary>Q-B · Cloudflare Zero Trust grátis exige cartão? — RESOLVIDA</summary>
+      <p class="qa-answer">Dono (2026-10-10): o cadastro pede cartão, mas o plano Free funciona sem cobrança (o dono usa há muito tempo). O guia <code>02-cloudflare.md</code> explica isso para o aluno não desistir no cadastro e mostra onde escolher o plano Free.</p>
+    </details>
+    <details>
+      <summary>Q-C · Notificação de aprovação: webhook genérico + Telegram basta?</summary>
+      <p class="qa-answer">Assumido que sim para v1 (o link já volta na resposta da tool). WhatsApp via WaBlast pode entrar depois como adaptador opcional para quem é cliente.</p>
+    </details>
+    <details>
+      <summary>Q-D · Domínio e VPS — RESOLVIDA</summary>
+      <p class="qa-answer">Dono (2026-10-10): o domínio é sempre do aluno; o kit não fornece domínio. Para os testes do próprio kit (Fases 2–8), o dono faz o papel de aluno com um domínio e uma VPS dele. Consequência: o <code>e2e.yml</code> automático (cria e destrói VPS por API) sai do v1; o e2e passa a ser manual, roteiro em <code>docs/</code>, rodado antes de cada release.</p>
+    </details>
+    <details>
+      <summary>Q-E · Onde roda o app do aluno — RESOLVIDA</summary>
+      <p class="qa-answer">Dono (2026-10-10): tudo roda na VPS. O sistema que o aluno constrói (o que usa o banco) sobe como stack no mesmo servidor, na rede <code>infra_net</code>, e acessa o Postgres pelo nome do serviço, sem porta aberta. Hospedagem externa (Vercel etc.) não é suportada. O guia <code>04-dia-a-dia.md</code> traz um exemplo de stack de app conectando no banco do projeto.</p>
+    </details>
+    <details>
+      <summary>Q-F · Suporte e manutenção</summary>
+      <p class="qa-answer">Kit público gera issues. Sugestão: Discussions para dúvida, Issues só para bug com saída do <code>/infra:verificar</code> anexada; versão LTS por semestre.</p>
+    </details>
+  </section>
+
+  <section id="notes">
+    <h2>Notes</h2>
+
+    <h3>Lições do WaBlast que viram regra do kit</h3>
+    <table>
+      <tr><th>#</th><th>O que aconteceu</th><th>Regra no kit</th><th>Onde</th></tr>
+      <tr><td>L1</td><td>Senha antiga ficou em texto puro na env da stack depois da rotação</td><td>Senha só em Docker secret (<code>*_FILE</code>); verify acusa env com senha</td><td>50, 70, 90</td></tr>
+      <tr><td>L2</td><td>Porta publicada à mão sumiu no update da stack → prod fora 2,5 min (2026-10-10)</td><td>Toda porta e secret no arquivo da stack; verify compara stack em uso × arquivo (drift)</td><td>stacks, 90</td></tr>
+      <tr><td>L3</td><td>SSH com root e senha liberados + sessão root aberta no console por 48 dias</td><td>Chave só, sem root, <code>AllowUsers</code>, trava anti-lockout</td><td>15</td></tr>
+      <tr><td>L4</td><td>Postgres exposto por allowlist de IP; incidente de firewall em 2026-06-28</td><td>Postgres sem porta; Docker não respeita UFW → DOCKER-USER</td><td>20, 50</td></tr>
+      <tr><td>L5</td><td>Rotação revelou consumidores desconhecidos (mytask_tube, bd_comunidade)</td><td><code>consumers.json</code> + <code>/infra:trocar-senha</code> percorre a lista</td><td>50, ops</td></tr>
+      <tr><td>L6</td><td>Service token do Access some antes da origem → 401 e DCR</td><td>Identidade pelo JWT <code>Cf-Access-Jwt-Assertion</code>, 403 (já no código)</td><td>db-mcp</td></tr>
+      <tr><td>L7</td><td>Promote sem ajustar sequence → PK duplicada</td><td>Já corrigido (#528); teste de integração obrigatório</td><td>db-mcp</td></tr>
+      <tr><td>L8</td><td>Build OOM na VPS pequena</td><td>Swap na etapa 10; imagem pronta no ghcr (aluno não compila)</td><td>10, 1</td></tr>
+      <tr><td>L9</td><td>Superuser usado por agente (postgres-vps antigo)</td><td>Agente nunca recebe superuser; só <code>mcp_admin</code> e roles por banco</td><td>50, 70</td></tr>
+    </table>
+
+    <h3>Alternativas rejeitadas</h3>
+    <ul>
+      <li><strong>Só skill (sem scripts)</strong>: cada aluno ganha uma instalação diferente; impossível dar suporte.</li>
+      <li><strong>Ansible</strong>: mais robusto, mas mais uma ferramenta para o aluno leigo; bash idempotente + verificação cobre 1 servidor. Reavaliar se surgir multi-servidor.</li>
+      <li><strong>Coolify/Dokploy</strong>: resolveriam deploy de app, mas não o db-mcp nem o modelo de segurança; dá para conviver depois.</li>
+      <li><strong>Postgres com porta aberta e allowlist</strong>: é o que temos no WaBlast por causa dos 2 servidores; para aluno, o risco de errar a allowlist não compensa.</li>
+    </ul>
+
+    <h3>Paralelização</h3>
+    <p>Depois da Fase 0 (contrato <code>kit.env</code> + <code>lib.sh</code> fixados): Fase 1 (db-mcp) roda em paralelo com Fases 2–5 (scripts). Fase 6 depende de 1 e 4. Fase 7 depende de 2–6. Fase 8 por último.</p>
+
+    <h3>Fora do escopo v1</h3>
+    <ul>
+      <li>Deploy dos apps dos alunos (Next.js etc.) — só a recomendação de rodar na <code>infra_net</code>.</li>
+      <li>Separar banco em 2º servidor (o caminho fica documentado, não automatizado).</li>
+      <li>Outros sistemas além de Ubuntu 24.04.</li>
+      <li>Integração do PG Back Web no db-mcp (decidido em 2026-10-10: não compensa; API só tem health).</li>
+    </ul>
+  </section>
+
+  <section id="amendments">
+    <h2>Amendments</h2>
+    <details>
+      <summary>2026-10-10T20:10Z — Respostas do dono para Q-A, Q-B, Q-D e Q-E</summary>
+      <p>Q-A: repo em <code>giovani-junior-dev</code>. Q-B: Zero Trust pede cartão, mas o Free não cobra; vira aviso no guia. Q-D: domínio sempre do aluno; o e2e automático por API sai do v1 e vira roteiro manual com a VPS e o domínio do dono. Q-E: o app do aluno roda na mesma VPS como stack na <code>infra_net</code>; hospedagem externa não é suportada.</p>
+    </details>
+  </section>
+
+</main>
+</body>
+</html>

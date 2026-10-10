@@ -1,0 +1,27 @@
+name: ci
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  scripts:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      - name: shellcheck
+        run: |
+          files=$(git ls-files 'install/*.sh' 'install/**/*.sh')
+          [ -z "$files" ] || shellcheck -x $files
+      - name: bats
+        run: |
+          sudo apt-get update -qq && sudo apt-get install -y -qq bats
+          bats tests/bats
+      - name: stacks válidas
+        run: |
+          for f in $(git ls-files 'stacks/*.yml'); do docker compose -f "$f" config -q; done
+      - name: gitleaks
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
