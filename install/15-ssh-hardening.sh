@@ -178,8 +178,8 @@ verify_sshd() {
   [ "$(effective permitrootlogin)" = "no" ] || fail "PermitRootLogin efetivo não é no" "$EXIT_FAIL"
   [ "$(effective passwordauthentication)" = "no" ] || fail "PasswordAuthentication efetivo não é no" "$EXIT_FAIL"
   [ "$(effective kbdinteractiveauthentication)" = "no" ] || fail "KbdInteractiveAuthentication efetivo não é no" "$EXIT_FAIL"
-  ss -ltnH "sport = :$KIT_SSH_PORT" | grep -q . || fail "nada escutando na porta $KIT_SSH_PORT" "$EXIT_FAIL"
-  ufw status | grep -qE "^${KIT_SSH_PORT}/tcp +ALLOW" || fail "UFW sem regra para $KIT_SSH_PORT/tcp" "$EXIT_FAIL"
+  [ -n "$(ss -ltnH "sport = :$KIT_SSH_PORT")" ] || fail "nada escutando na porta $KIT_SSH_PORT" "$EXIT_FAIL"
+  grep -qE "^${KIT_SSH_PORT}/tcp +ALLOW" <<<"$(ufw status)" || fail "UFW sem regra para $KIT_SSH_PORT/tcp" "$EXIT_FAIL"
 }
 
 main() {

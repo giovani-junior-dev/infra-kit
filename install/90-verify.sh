@@ -211,8 +211,10 @@ check_backup() {
 }
 
 check_dbmcp_health() {
-  if docker run --rm --network infra_net "$HEALTH_IMAGE" \
-       wget -qO- -T 5 http://db-mcp_db-mcp:8002/health 2>/dev/null | grep -q '"ok":true'; then
+  local body
+  body="$(docker run --rm --network infra_net "$HEALTH_IMAGE" \
+    wget -qO- -T 5 http://db-mcp_db-mcp:8002/health 2>/dev/null)"
+  if grep -q '"ok":true' <<<"$body"; then
     pass dbmcp.health "db-mcp respondendo"
   else
     flunk dbmcp.health "db-mcp não responde /health" "veja: docker service logs db-mcp_db-mcp --tail 50 (ou rode de novo a etapa 70)"

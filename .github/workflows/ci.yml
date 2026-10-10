@@ -13,7 +13,9 @@ jobs:
       - name: shellcheck
         run: |
           files=$(git ls-files 'install/*.sh' 'install/**/*.sh')
-          [ -z "$files" ] || shellcheck -x $files
+          # Build de master fixado por digest: o release v0.11.0 ainda não tem a SC2337
+          # (grep -q em pipe com pipefail = SIGPIPE aleatório). Trocar por release quando sair.
+          [ -z "$files" ] || docker run --rm -v "$PWD:/mnt" -w /mnt             koalaman/shellcheck@sha256:bbc8c99df4eb97cab643054b7cfdf2ad802836a9fadd46b454c055a819697a41 -x $files
       - name: bats
         run: |
           sudo apt-get update -qq && sudo apt-get install -y -qq bats

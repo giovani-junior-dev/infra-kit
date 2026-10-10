@@ -42,8 +42,10 @@ pg_prod() {
 
 # GET /health pela overlay, de um container descartável na infra_net.
 health_via_overlay() {
-  docker run --rm --network infra_net "$HEALTH_IMAGE" \
-    wget -qO- -T 5 "http://$SERVICE:8002/health" 2>/dev/null | grep -q '"ok":true'
+  local body
+  body="$(docker run --rm --network infra_net "$HEALTH_IMAGE" \
+    wget -qO- -T 5 "http://$SERVICE:8002/health" 2>/dev/null)" || return 1
+  grep -q '"ok":true' <<<"$body"
 }
 
 wait_healthy() {

@@ -121,7 +121,7 @@ verify() {
   systemctl is-active --quiet chrony || fail "chrony parado" "$EXIT_FAIL"
   [ "$(timedatectl show -p Timezone --value)" = "$tz" ] || fail "fuso diferente de $tz" "$EXIT_FAIL"
   [ -n "$(swapon --show --noheadings)" ] || fail "sem swap ativa" "$EXIT_FAIL"
-  id -nG "$KIT_ADMIN_USER" | grep -qw sudo || fail "$KIT_ADMIN_USER fora do grupo sudo" "$EXIT_FAIL"
+  grep -qw sudo <<<"$(id -nG "$KIT_ADMIN_USER")" || fail "$KIT_ADMIN_USER fora do grupo sudo" "$EXIT_FAIL"
   grep -qxF "$KIT_ADMIN_PUBKEY" "$(getent passwd "$KIT_ADMIN_USER" | cut -d: -f6)/.ssh/authorized_keys" ||
     fail "chave pública ausente em authorized_keys" "$EXIT_FAIL"
 }
