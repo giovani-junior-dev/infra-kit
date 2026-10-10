@@ -72,8 +72,8 @@ register_consumer backup_reader_pw_homolog pgbackweb painel backup_reader
 
 # Verificação
 for env in prod homolog; do
-  docker service inspect "pg-${env}_postgres" --format '{{json .Spec.TaskTemplate.ContainerSpec.Env}}' \
-    | grep -q 'POSTGRES_PASSWORD=' && fail "pg-$env com senha em texto na env (lição L1)"
+  grep -q 'POSTGRES_PASSWORD=' <<<"$(docker service inspect "pg-${env}_postgres" --format '{{json .Spec.TaskTemplate.ContainerSpec.Env}}')" \
+    && fail "pg-$env com senha em texto na env (lição L1)"
   [ "$(echo "SELECT rolsuper FROM pg_roles WHERE rolname='mcp_admin'" | pg_sql "pg-$env")" = "f" ] \
     || fail "mcp_admin em pg-$env não pode ser superuser"
   [ "$(echo "SELECT r.rolsuper::text || pg_has_role('backup_reader','pg_read_all_data','MEMBER')::text FROM pg_roles r WHERE r.rolname='backup_reader'" | pg_sql "pg-$env")" = "falsetrue" ]     || fail "backup_reader em pg-$env deve ler tudo e não ser superuser"

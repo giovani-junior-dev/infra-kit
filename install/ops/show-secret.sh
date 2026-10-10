@@ -7,8 +7,9 @@
 source "$(dirname "$0")/../lib.sh"
 
 NAME="${1:-}"
-[[ "$NAME" =~ ^[a-z0-9_]+$ ]] && [ "${2:-}" = "--mostrar" ] \
-  || fail "uso: $0 <secret> --mostrar  (o valor aparece na tela; ninguém olhando?)" "$EXIT_CONFIG"
+if ! [[ "$NAME" =~ ^[a-z0-9_]+$ ]] || [ "${2:-}" != "--mostrar" ]; then
+  fail "uso: $0 <secret> --mostrar  (o valor aparece na tela; ninguém olhando?)" "$EXIT_CONFIG"
+fi
 
 require_root
 docker secret inspect "$NAME" >/dev/null 2>&1 || fail "secret $NAME não existe" "$EXIT_CONFIG"
