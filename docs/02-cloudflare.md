@@ -67,7 +67,7 @@ Backup no próprio servidor não protege contra perder o servidor. Use o R2:
 No painel do PG Back Web (`https://pgbackweb.seudominio.com`), cadastre:
 
 - **Destination**: S3, endpoint acima, região `auto`, bucket e as duas chaves;
-- **Database**: o banco de produção;
+- **Database**: o banco de produção, com a role `backup_reader` (veja `backups.md`);
 - **Backup**: agenda diária às 03:00, retenção de 14 dias.
 
 Para o `install/ops/restore-test.sh` baixar o último dump, adicione no
