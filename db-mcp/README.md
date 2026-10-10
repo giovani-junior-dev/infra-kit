@@ -13,6 +13,22 @@ Imagem: `ghcr.io/giovani-junior-dev/infra-kit-db-mcp:<versão>`.
 
 Toda variável aceita a forma `X_FILE=/run/secrets/x` (Docker secret). Definir `X` e `X_FILE` juntas é erro.
 
+Secret com só a senha: todo DSN `X` aceita `X_PASSWORD` (ou `X_PASSWORD_FILE`), que entra no DSN. Exemplo no kit (1 servidor, rede `infra_net`):
+
+```
+MCP_CONTROL_DATABASE_URL=postgres://mcp_control_rw@pg-prod_postgres:5432/mcp_control
+MCP_CONTROL_DATABASE_URL_PASSWORD_FILE=/run/secrets/mcp_control_rw_pw
+DB_MCP_ADMIN_DSN_PROD=postgres://mcp_admin@pg-prod_postgres:5432/postgres
+DB_MCP_ADMIN_DSN_PROD_PASSWORD_FILE=/run/secrets/mcp_admin_pw_prod
+DB_MCP_ADMIN_DSN_HML=postgres://mcp_admin@pg-homolog_postgres:5432/postgres
+DB_MCP_ADMIN_DSN_HML_PASSWORD_FILE=/run/secrets/mcp_admin_pw_homolog
+CF_ACCESS_TEAM_DOMAIN=${KIT_CF_TEAM_DOMAIN}
+CF_ACCESS_AUD_MCP=${KIT_CF_AUD_DBMCP}
+CF_ACCESS_AUD_APPROVE=${KIT_CF_AUD_DBMCP_APPROVE}
+```
+
+DSN que já traz senha junto com `X_PASSWORD` é erro.
+
 | Variável | Obrigatória | O que é |
 |---|---|---|
 | `MCP_CONTROL_DATABASE_URL` | sim | DSN do banco `mcp_control` com a role `mcp_control_rw` |

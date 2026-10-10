@@ -19,5 +19,28 @@ export function resolveFileEnv(env: Env): Env {
       throw new Error(`não consegui ler o arquivo de ${key}`)
     }
   }
-  return out
+  return injectPasswords(out)
+}
+
+/**
+ * Secret com só a senha: X=postgres://user@host:5432/db + X_PASSWORD(_FILE) vira o DSN completo.
+ * DSN que já traz senha junto com X_PASSWORD é erro (ambíguo).
+ */
+function injectPasswords(env: Env): Env {
+  for (const [key, pw] of Object.entries(env)) {
+    if (!key.endsWith('_PASSWORD') || pw === undefined || pw === '') continue
+    const name = key.slice(0, -'_PASSWORD'.length)
+    const dsn = env[name]?.trim()
+    if (!dsn) continue
+    let u: URL
+    try {
+      u = new URL(dsn)
+    } catch {
+      throw new Error(`${name} não é um DSN válido para receber ${key}`)
+    }
+    if (u.password) throw new Error(`${name} já tem senha; tire a senha do DSN ou remova ${key}`)
+    u.password = encodeURIComponent(pw)
+    env[name] = u.toString()
+  }
+  return env
 }

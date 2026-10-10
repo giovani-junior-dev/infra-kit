@@ -37,3 +37,30 @@ describe('resolveFileEnv', () => {
     expect(resolveFileEnv({ APPROVAL_SECRET_FILE: '' }).APPROVAL_SECRET).toBeUndefined()
   })
 })
+
+describe('X_PASSWORD (senha separada do DSN)', () => {
+  it('Docker secret só com a senha: X_PASSWORD_FILE entra no DSN de X', () => {
+    const env = resolveFileEnv({
+      MCP_CONTROL_DATABASE_URL: 'postgres://mcp_control_rw@pg-prod_postgres:5432/mcp_control',
+      MCP_CONTROL_DATABASE_URL_PASSWORD_FILE: file('pw', 'p@ss/w:rd\n'),
+    })
+    const u = new URL(env.MCP_CONTROL_DATABASE_URL!)
+    expect(u.username).toBe('mcp_control_rw')
+    expect(decodeURIComponent(u.password)).toBe('p@ss/w:rd')
+    expect(u.host).toBe('pg-prod_postgres:5432')
+    expect(u.pathname).toBe('/mcp_control')
+  })
+
+  it('vale para os DSNs admin', () => {
+    const env = resolveFileEnv({ DB_MCP_ADMIN_DSN_PROD: 'postgres://mcp_admin@pg-prod_postgres:5432/postgres', DB_MCP_ADMIN_DSN_PROD_PASSWORD: 'x' })
+    expect(new URL(env.DB_MCP_ADMIN_DSN_PROD!).password).toBe('x')
+  })
+
+  it('DSN que já traz senha + X_PASSWORD: erro claro', () => {
+    expect(() => resolveFileEnv({ MCP_CONTROL_DATABASE_URL: 'postgres://u:a@h/db', MCP_CONTROL_DATABASE_URL_PASSWORD: 'b' })).toThrow(/MCP_CONTROL_DATABASE_URL já tem senha/)
+  })
+
+  it('X_PASSWORD sem X: ignorado', () => {
+    expect(resolveFileEnv({ DB_MCP_ADMIN_DSN_HML_PASSWORD: 'x' }).DB_MCP_ADMIN_DSN_HML).toBeUndefined()
+  })
+})
