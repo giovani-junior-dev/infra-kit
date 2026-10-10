@@ -52,3 +52,56 @@ set_env_var() {
 }
 
 require_root() { [ "$(id -u)" -eq 0 ] || fail "rode como root (sudo)" "$EXIT_PRECONDITION"; }
+
+# Registro de quem consome cada credencial (lição L5). A rotação de senha
+# percorre esta lista para atualizar todo mundo. Uso:
+#   register_consumer <secret> <stack> <serviço> <role>
+KIT_CONSUMERS="${KIT_CONSUMERS:-$KIT_DIR/consumers.json}"
+register_consumer() {
+  local secret="$1" stack="$2" service="$3" role="$4" tmp
+  command -v jq >/dev/null || fail "jq não instalado" "$EXIT_PRECONDITION"
+  mkdir -p "$(dirname "$KIT_CONSUMERS")"
+  [ -s "$KIT_CONSUMERS" ] || printf '{"consumers":[]}\n' > "$KIT_CONSUMERS"
+  tmp="$(mktemp)"
+  jq --arg secret "$secret" --arg stack "$stack" --arg service "$service" --arg role "$role" '
+    .consumers |= (map(select(.secret != $secret or .stack != $stack or .service != $service))
+                   + [{secret: $secret, stack: $stack, service: $service, role: $role}]
+                   | sort_by(.secret, .stack, .service))
+  ' "$KIT_CONSUMERS" > "$tmp"
+  mv "$tmp" "$KIT_CONSUMERS"
+  chmod 600 "$KIT_CONSUMERS"
+}
+
+# Cria um Docker secret com valor aleatório gerado aqui, sem imprimir.
+# Retorna 0 se criou, 1 se já existia (secrets do swarm são imutáveis).
+create_random_secret() {
+  local name="$1" bytes="${2:-32}"
+  if docker secret inspect "$name" >/dev/null 2>&1; then return 1; fi
+  openssl rand -hex "$bytes" | tr -d '\n' | docker secret create "$name" - >/dev/null
+}
+
+# Id do container da task em execução de um serviço do swarm (nó local).
+service_container() {
+  docker ps -q --filter "label=com.docker.swarm.service.name=$1" --filter status=running | head -n1
+}
+
+# Grava stdin em <arquivo> só se o conteúdo mudou. Retorna 0 se gravou, 1 se já
+# estava igual — é o guard de idempotência das etapas (reload só quando muda).
+write_if_changed() {
+  local path="$1" mode="${2:-644}" tmp
+  tmp="$(mktemp)"
+  cat > "$tmp"
+  if [ -f "$path" ] && cmp -s "$tmp" "$path"; then
+    rm -f "$tmp"; return 1
+  fi
+  mkdir -p "$(dirname "$path")"
+  chmod "$mode" "$tmp"
+  mv "$tmp" "$path"
+}
+
+# Acrescenta <linha> a <arquivo> se ela ainda não existir (linha inteira).
+ensure_line() {
+  local line="$1" path="$2"
+  touch "$path"
+  grep -qxF -- "$line" "$path" || printf '%s\n' "$line" >> "$path"
+}
