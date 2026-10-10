@@ -34,6 +34,8 @@ Se o stdout não for JSON válido (script ausente, versão antiga, erro antes da
 3. Verdes numa linha só, por `id`.
 4. Se um `fix` manda rodar comando no servidor, mostre o comando, explique o efeito e **pergunte antes** de rodar. Comando que reinicia serviço ou troca senha só com OK explícito.
 
-Use a explicação de `docs/05-problemas.md` quando o vermelho bater com um caso de lá (porta sumiu depois de update no Portainer, senha em texto na env, backup antigo).
+Ids que o script emite hoje, para agrupar o resumo: `ssh.port`, `ssh.root_login`, `ssh.password`, `ssh.kbd_interactive`, `ssh.config`, `ufw.active`, `docker_user.jump`, `swarm.published_ports`, `secrets.env_plaintext`, `drift.<stack>`, `services.replicas`, `backup.latest`, `dbmcp.health`, `cloudflared.connected`. Id desconhecido: mostre como veio, sem interpretar.
+
+Use a explicação de `docs/05-problemas.md` quando o vermelho bater com um caso de lá (`drift.*`: porta sumiu depois de update no Portainer; `secrets.env_plaintext`: senha em texto na env; `swarm.published_ports`/`docker_user.jump`: Docker passando por cima do UFW; `backup.latest`: backup antigo).
 
 Nunca peça senha nem token para "consertar": nenhum `fix` precisa disso no chat.

@@ -29,7 +29,7 @@ Por segurança o banco nasce sem nenhum agente com acesso. O dono libera, no ser
 ssh -i <chave> -p <porta> <admin>@<ip> 'sudo bash /opt/infra-kit/src/install/ops/new-project.sh grant <nome>@hml'
 ```
 
-(o terceiro argumento opcional é o nome do agente; padrão `agente-1`). Peça OK antes de rodar.
+(o agente é o Client ID do service token, lido de `KIT_CF_SERVICE_TOKEN_CLIENT_ID` no `kit.env`; um terceiro argumento opcional troca por outro Client ID). Peça OK antes de rodar.
 
 ## 4. Estrutura em homologação
 

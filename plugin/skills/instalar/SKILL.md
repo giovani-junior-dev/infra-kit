@@ -143,7 +143,7 @@ Depois dela o aluno cadastra no painel do PG Back Web o destino R2, o banco e a 
 
 ## 7. Fim: conectar o Claude Code ao db-mcp
 
-O aluno roda **num terminal dele, fora do Claude Code** (o secret não pode entrar na conversa). Ele cola o Client Id e o Client Secret quando o `read` pedir:
+A etapa 70 termina imprimindo o `claude mcp add` pronto, com o Client Id do `kit.env` e `<COLE_AQUI_O_CLIENT_SECRET>` no lugar do secret. Mostre esse comando ao aluno. Ele roda **num terminal dele, fora do Claude Code** (o secret não pode entrar na conversa). Para não colar o secret na linha de comando, a forma equivalente com `read`:
 
 ```
 read -r -p 'Client Id: ' CID && read -rs -p 'Client Secret: ' CS && echo && claude mcp add --scope user --transport http db-mcp https://db-mcp.<dominio>/mcp   --header "CF-Access-Client-Id: $CID" --header "CF-Access-Client-Secret: $CS"; unset CID CS

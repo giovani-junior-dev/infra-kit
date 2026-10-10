@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # Passos do dono que o db-mcp não faz pelo agente (de propósito):
-#   grant <banco>@<env> [agente]   libera o alvo para o agente (mcp_control.agents)
+#   grant <banco>@<env> [client_id] libera o alvo para o agente (mcp_control.agents;
+#                                  padrão: KIT_CF_SERVICE_TOKEN_CLIENT_ID do kit.env)
 #   app-secret <banco>@<env>       grava a connection string da role _rw num
 #                                  Docker secret app_<banco>_<env>_dsn, para o app
 # Uso: sudo install/ops/new-project.sh grant loja@hml
@@ -14,7 +15,7 @@ DBMCP_SERVICE="${DBMCP_SERVICE:-db-mcp_db-mcp}"
 
 usage() {
   cat >&2 <<'EOF'
-uso: new-project.sh grant <banco>@<hml|prod> [agente]   (padrão: agente-1)
+uso: new-project.sh grant <banco>@<hml|prod> [client_id]   (padrão: KIT_CF_SERVICE_TOKEN_CLIENT_ID)
      new-project.sh app-secret <banco>@<hml|prod>
 EOF
 }
@@ -26,10 +27,10 @@ valid_agent() { [[ "$1" =~ ^[A-Za-z0-9._-]+$ ]]; }
 parse_args() {
   case "${1:-}" in
     grant)
-      if ! { [ "$#" -ge 2 ] && [ "$#" -le 3 ] && valid_ref "$2" && valid_agent "${3:-agente-1}"; }; then
+      if ! { [ "$#" -ge 2 ] && [ "$#" -le 3 ] && valid_ref "$2" && valid_agent "${3:-padrao}"; }; then
         usage; return "$EXIT_CONFIG"
       fi
-      echo "grant $2 ${3:-agente-1}" ;;
+      echo "grant $2 ${3:-}" ;;
     app-secret)
       if ! { [ "$#" -eq 2 ] && valid_ref "$2"; }; then usage; return "$EXIT_CONFIG"; fi
       echo "app-secret $2" ;;
@@ -41,8 +42,8 @@ app_secret_name() { echo "app_${1%@*}_${1#*@}_dsn"; }
 
 # Entradas já validadas (valid_ref/valid_agent): sem aspas possíveis.
 render_grant_sql() {
-  printf "UPDATE agents SET targets = array_append(targets, '%s') WHERE name = '%s' AND NOT ('%s' = ANY(targets));\n" "$1" "$2" "$1"
-  printf "SELECT count(*) FROM agents WHERE name = '%s' AND '%s' = ANY(targets);\n" "$2" "$1"
+  printf "UPDATE agents SET targets = array_append(targets, '%s') WHERE client_id = '%s' AND NOT ('%s' = ANY(targets));\n" "$1" "$2" "$1"
+  printf "SELECT count(*) FROM agents WHERE client_id = '%s' AND '%s' = ANY(targets);\n" "$2" "$1"
 }
 
 # Exemplo de stack do app conectando no banco pela infra_net (Q-E).
@@ -80,7 +81,7 @@ control_sql() {
 do_grant() {
   local ref="$1" agent="$2" n
   n="$(render_grant_sql "$ref" "$agent" | control_sql | tail -n1)"
-  [ "$n" = "1" ] || fail "agente $agent não existe em mcp_control.agents" "$EXIT_PRECONDITION"
+  [ "$n" = "1" ] || fail "agente $agent não existe em mcp_control.agents (rode a etapa 70)" "$EXIT_PRECONDITION"
   ok "$agent pode usar $ref"
 }
 
@@ -119,7 +120,14 @@ main() {
   read -r cmd ref agent <<<"$args"
   require_root
   case "$cmd" in
-    grant)      do_grant "$ref" "$agent" ;;
+    grant)
+      if [ -z "$agent" ]; then
+        load_env
+        require_var KIT_CF_SERVICE_TOKEN_CLIENT_ID
+        agent="$KIT_CF_SERVICE_TOKEN_CLIENT_ID"
+        valid_agent "$agent" || fail "KIT_CF_SERVICE_TOKEN_CLIENT_ID inválido" "$EXIT_CONFIG"
+      fi
+      do_grant "$ref" "$agent" ;;
     app-secret) do_app_secret "$ref" ;;
   esac
 }

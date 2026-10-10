@@ -24,10 +24,10 @@ setup() {
   [ "$(app_secret_name minha_loja@prod)" = "app_minha_loja_prod_dsn" ]
 }
 
-@test "render_grant_sql não duplica o alvo e filtra pelo agente" {
-  run render_grant_sql loja@hml agente-1
+@test "render_grant_sql não duplica o alvo e filtra pelo client_id" {
+  run render_grant_sql loja@hml abc123.access
   [[ "$output" == *"array_append(targets, 'loja@hml')"* ]]
-  [[ "$output" == *"name = 'agente-1'"* ]]
+  [[ "$output" == *"client_id = 'abc123.access'"* ]]
   [[ "$output" == *"NOT ('loja@hml' = ANY(targets))"* ]]
 }
 
@@ -45,8 +45,8 @@ setup() {
 }
 
 @test "parse_args: comandos e erro de uso" {
-  [ "$(parse_args grant loja@hml)" = "grant loja@hml agente-1" ]
-  [ "$(parse_args grant loja@hml agente-2)" = "grant loja@hml agente-2" ]
+  [ "$(parse_args grant loja@hml)" = "grant loja@hml " ]
+  [ "$(parse_args grant loja@hml abc.access)" = "grant loja@hml abc.access" ]
   [ "$(parse_args app-secret loja@prod)" = "app-secret loja@prod" ]
   run parse_args grant loja
   [ "$status" -eq 2 ]
