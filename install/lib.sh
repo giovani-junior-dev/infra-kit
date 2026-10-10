@@ -84,3 +84,24 @@ create_random_secret() {
 service_container() {
   docker ps -q --filter "label=com.docker.swarm.service.name=$1" --filter status=running | head -n1
 }
+
+# Grava stdin em <arquivo> só se o conteúdo mudou. Retorna 0 se gravou, 1 se já
+# estava igual — é o guard de idempotência das etapas (reload só quando muda).
+write_if_changed() {
+  local path="$1" mode="${2:-644}" tmp
+  tmp="$(mktemp)"
+  cat > "$tmp"
+  if [ -f "$path" ] && cmp -s "$tmp" "$path"; then
+    rm -f "$tmp"; return 1
+  fi
+  mkdir -p "$(dirname "$path")"
+  chmod "$mode" "$tmp"
+  mv "$tmp" "$path"
+}
+
+# Acrescenta <linha> a <arquivo> se ela ainda não existir (linha inteira).
+ensure_line() {
+  local line="$1" path="$2"
+  touch "$path"
+  grep -qxF -- "$line" "$path" || printf '%s\n' "$line" >> "$path"
+}
