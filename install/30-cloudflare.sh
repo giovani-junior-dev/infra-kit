@@ -57,6 +57,13 @@ if [ -z "$TOKEN_ID" ]; then
   TOKEN_ID="$(jq -r '.id' <<<"$NEW_TOKEN_JSON")"
 fi
 set_env_var KIT_CF_SERVICE_TOKEN_ID "$TOKEN_ID"
+if [ -n "$NEW_TOKEN_JSON" ]; then
+  TOKEN_CLIENT_ID="$(jq -r '.client_id' <<<"$NEW_TOKEN_JSON")"
+else
+  TOKEN_CLIENT_ID="$(cf_service_token_client_id "$SERVICE_TOKEN_NAME")"
+fi
+[ -n "$TOKEN_CLIENT_ID" ] || fail "não achei o Client ID do service token $SERVICE_TOKEN_NAME"
+set_env_var KIT_CF_SERVICE_TOKEN_CLIENT_ID "$TOKEN_CLIENT_ID"
 
 OWNER_POLICY="$(cf_ensure_policy "infra-kit dono" "$(cf_email_policy_payload "infra-kit dono" "$KIT_OWNER_EMAIL")")"
 AGENT_POLICY="$(cf_ensure_policy "infra-kit $SERVICE_TOKEN_NAME" "$(cf_service_token_policy_payload "infra-kit $SERVICE_TOKEN_NAME" "$TOKEN_ID")")"

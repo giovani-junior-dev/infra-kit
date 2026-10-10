@@ -86,6 +86,12 @@ cf_find_service_token() {
     | jq -r --arg n "$1" 'map(select(.name == $n))[0].id // empty'
 }
 
+# Client ID do service token com esse nome (vira o claim common_name do JWT do
+# Access; é a chave do agente no db-mcp). Não é segredo.
+cf_service_token_client_id() {
+  cf_api GET "/accounts/$KIT_CF_ACCOUNT_ID/access/service_tokens?name=$1"     | jq -r --arg n "$1" 'map(select(.name == $n))[0].client_id // empty'
+}
+
 # Política reutilizável: busca por nome; cria com o payload dado se não existir.
 cf_ensure_policy() {
   local name="$1" payload="$2" id

@@ -4,7 +4,8 @@
 services:
   cloudflared:
     image: cloudflare/cloudflared:2026.10.0
-    command: [tunnel, --no-autoupdate, run, --token-file, /run/secrets/cf_tunnel_token]
+    # --metrics só na infra_net (sem ports): o 90-verify lê /ready para saber se conectou.
+    command: [tunnel, --no-autoupdate, --metrics, "0.0.0.0:2000", run, --token-file, /run/secrets/cf_tunnel_token]
     secrets: [cf_tunnel_token]
     networks: [infra_net]
     deploy:

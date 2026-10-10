@@ -1,0 +1,50 @@
+# db-mcp (etapa 70). Sem porta: https://db-mcp.<domínio> via túnel + Access
+# (ingress http://db-mcp_db-mcp:8002). Segredos só por *_FILE (lição L1); senha
+# dos DSNs entra por X_PASSWORD_FILE (db-mcp/README.md). Lição L2: tudo aqui.
+# Env não secreta vem do kit.env no deploy (`docker stack deploy` substitui ${...}).
+services:
+  db-mcp:
+    image: ghcr.io/giovani-junior-dev/infra-kit-db-mcp:${KIT_DBMCP_VERSION:-1.0.0}
+    environment:
+      MCP_CONTROL_DATABASE_URL: postgres://mcp_control_rw@pg-prod_postgres:5432/mcp_control
+      MCP_CONTROL_DATABASE_URL_PASSWORD_FILE: /run/secrets/mcp_control_rw_pw
+      DB_MCP_ADMIN_DSN_PROD: postgres://mcp_admin@pg-prod_postgres:5432/postgres
+      DB_MCP_ADMIN_DSN_PROD_PASSWORD_FILE: /run/secrets/mcp_admin_pw_prod
+      DB_MCP_ADMIN_DSN_HML: postgres://mcp_admin@pg-homolog_postgres:5432/postgres
+      DB_MCP_ADMIN_DSN_HML_PASSWORD_FILE: /run/secrets/mcp_admin_pw_homolog
+      APPROVAL_SECRET_FILE: /run/secrets/dbmcp_approval_secret
+      DB_MCP_TARGETS_KEY_FILE: /run/secrets/dbmcp_targets_key
+      APPROVAL_BASE_URL: https://db-mcp.${KIT_DOMAIN}
+      APPROVER_EMAILS: ${KIT_OWNER_EMAIL}
+      CF_ACCESS_TEAM_DOMAIN: ${KIT_CF_TEAM_DOMAIN}
+      CF_ACCESS_AUD_MCP: ${KIT_CF_AUD_DBMCP}
+      CF_ACCESS_AUD_APPROVE: ${KIT_CF_AUD_DBMCP_APPROVE}
+      HOST: 0.0.0.0
+      PORT: "8002"
+    secrets:
+      - mcp_control_rw_pw
+      - mcp_admin_pw_prod
+      - mcp_admin_pw_homolog
+      - dbmcp_approval_secret
+      - dbmcp_targets_key
+    networks: [infra_net]
+    healthcheck:
+      test: [CMD, node, -e, "fetch('http://127.0.0.1:8002/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 30s
+      timeout: 5s
+      start_period: 20s
+      retries: 3
+    deploy:
+      replicas: 1
+      resources: { limits: { memory: 512M } }
+      restart_policy: { condition: any }
+
+secrets:
+  mcp_control_rw_pw: { external: true }
+  mcp_admin_pw_prod: { external: true }
+  mcp_admin_pw_homolog: { external: true }
+  dbmcp_approval_secret: { external: true }
+  dbmcp_targets_key: { external: true }
+
+networks:
+  infra_net: { external: true }
