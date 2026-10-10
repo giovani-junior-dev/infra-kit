@@ -23,7 +23,7 @@ usage() {
 # Uso: parse_args "$@" → imprime "<env> <plan|run|dry-run>"; inválido sai com 2.
 parse_args() {
   local env="${1:-}" mode
-  [ "$#" -ge 1 ] && [ "$#" -le 2 ] || { usage; return "$EXIT_CONFIG"; }
+  if [ "$#" -lt 1 ] || [ "$#" -gt 2 ]; then usage; return "$EXIT_CONFIG"; fi
   case "$env" in prod|homolog) ;; *) usage; return "$EXIT_CONFIG" ;; esac
   case "${2:-}" in
     "")        mode=plan ;;
