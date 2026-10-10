@@ -25,3 +25,48 @@ jobs:
         uses: gitleaks/gitleaks-action@v2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  db-mcp:
+    runs-on: ubuntu-24.04
+    defaults:
+      run:
+        working-directory: db-mcp
+    services:
+      # "servidor prod" e, na porta 5433, o mesmo servidor visto como "hml" (DB_MCP_IT_HML_PORT)
+      postgres:
+        image: pgvector/pgvector:pg16
+        env: { POSTGRES_PASSWORD: pw }
+        ports: ['5432:5432', '5433:5432']
+        options: >-
+          --health-cmd "pg_isready -U postgres" --health-interval 5s --health-timeout 5s --health-retries 10
+      # outro servidor de verdade (target-env: mesmo nome de banco nos dois)
+      postgres-hml:
+        image: pgvector/pgvector:pg16
+        env: { POSTGRES_PASSWORD: pw }
+        ports: ['5434:5432']
+        options: >-
+          --health-cmd "pg_isready -U postgres" --health-interval 5s --health-timeout 5s --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: db-mcp/package-lock.json
+      - name: cliente PostgreSQL 16 (pg_dump/pg_restore)
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq postgresql-client-16
+      - run: npm ci --no-audit --no-fund
+      - name: unitários
+        run: npm test
+      - name: integração
+        env:
+          DB_MCP_IT_ADMIN_URL: postgres://postgres:pw@127.0.0.1:5432/postgres
+          DB_MCP_IT_HML_PORT: '5433'
+          DB_MCP_IT_HML_ADMIN_URL: postgres://postgres:pw@127.0.0.1:5434/postgres
+          DB_MCP_IT_PG_BIN_DIR: /usr/lib/postgresql/16/bin
+        run: npm run test:integration
+      - name: build
+        run: npm run build
+      - name: sem referência ao projeto de origem
+        working-directory: .
+        run: '! grep -rniE "wablast|dev-junior|script7|whatsapp_meta" db-mcp/'
