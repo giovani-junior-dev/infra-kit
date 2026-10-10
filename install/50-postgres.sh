@@ -34,7 +34,7 @@ ensure_role() {
   local stack="$1" role="$2" attrs="$3" secret="$4" pw
   if [ "$(echo "SELECT 1 FROM pg_roles WHERE rolname='$role'" | pg_sql "$stack")" = "1" ]; then
     docker secret inspect "$secret" >/dev/null 2>&1 \
-      || fail "role $role existe em $stack mas o secret $secret sumiu; use ops/rotate" "$EXIT_PRECONDITION"
+      || fail "role $role existe em $stack mas o secret $secret sumiu; gere outra senha com install/ops/rotate-superuser.sh (fase 7)" "$EXIT_PRECONDITION"
     return 0
   fi
   docker secret inspect "$secret" >/dev/null 2>&1 \
@@ -53,6 +53,11 @@ wait_ready pg-homolog
 
 ensure_role pg-prod mcp_admin "CREATEDB CREATEROLE NOSUPERUSER" mcp_admin_pw_prod
 ensure_role pg-homolog mcp_admin "CREATEDB CREATEROLE NOSUPERUSER" mcp_admin_pw_homolog
+ensure_role pg-prod backup_reader "NOSUPERUSER NOCREATEDB NOCREATEROLE" backup_reader_pw_prod
+ensure_role pg-homolog backup_reader "NOSUPERUSER NOCREATEDB NOCREATEROLE" backup_reader_pw_homolog
+for env in prod homolog; do
+  echo "GRANT pg_read_all_data TO backup_reader;" | pg_sql "pg-$env"
+done
 ensure_role pg-prod mcp_control_rw "NOSUPERUSER NOCREATEDB NOCREATEROLE" mcp_control_rw_pw
 if [ "$(echo "SELECT 1 FROM pg_database WHERE datname='mcp_control'" | pg_sql pg-prod)" != "1" ]; then
   echo "CREATE DATABASE mcp_control OWNER mcp_control_rw;" | pg_sql pg-prod
@@ -61,6 +66,9 @@ fi
 register_consumer mcp_admin_pw_prod db-mcp db-mcp mcp_admin
 register_consumer mcp_admin_pw_homolog db-mcp db-mcp mcp_admin
 register_consumer mcp_control_rw_pw db-mcp db-mcp mcp_control_rw
+# O PG Back Web guarda a senha no banco dele; cadastro manual no painel (docs/backups.md).
+register_consumer backup_reader_pw_prod pgbackweb painel backup_reader
+register_consumer backup_reader_pw_homolog pgbackweb painel backup_reader
 
 # Verificação
 for env in prod homolog; do
@@ -68,6 +76,7 @@ for env in prod homolog; do
     | grep -q 'POSTGRES_PASSWORD=' && fail "pg-$env com senha em texto na env (lição L1)"
   [ "$(echo "SELECT rolsuper FROM pg_roles WHERE rolname='mcp_admin'" | pg_sql "pg-$env")" = "f" ] \
     || fail "mcp_admin em pg-$env não pode ser superuser"
+  [ "$(echo "SELECT r.rolsuper::text || pg_has_role('backup_reader','pg_read_all_data','MEMBER')::text FROM pg_roles r WHERE r.rolname='backup_reader'" | pg_sql "pg-$env")" = "falsetrue" ]     || fail "backup_reader em pg-$env deve ler tudo e não ser superuser"
 done
 mark_done 50-postgres
 ok "etapa 50 concluída"

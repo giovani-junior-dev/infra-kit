@@ -25,7 +25,9 @@ load_env
 
 WORK="$(mktemp -d)"
 TMP_DB="restore_test_$(date +%s)"
-psql_in() { docker exec -i "$(service_container "$1_postgres")" psql -v ON_ERROR_STOP=1 -qtAX -U postgres -d "${2:-postgres}"; }
+# PSQL_USER=backup_reader nas leituras do prod: o socket local do container não
+# pede senha, mas a sessão roda com os privilégios só de leitura da role.
+psql_in() { docker exec -i "$(service_container "$1_postgres")" psql -v ON_ERROR_STOP=1 -qtAX -U "${PSQL_USER:-postgres}" -d "${2:-postgres}"; }
 cleanup() {
   echo "DROP DATABASE IF EXISTS $TMP_DB;" | psql_in pg-homolog >/dev/null 2>&1 || warn "não apaguei $TMP_DB no pg-homolog"
   rm -rf "$WORK"
@@ -60,6 +62,6 @@ esac
 
 COUNT_SQL="SELECT count(*) FROM information_schema.tables WHERE table_type='BASE TABLE' AND table_schema NOT IN ('pg_catalog','information_schema');"
 restored="$(echo "$COUNT_SQL" | psql_in pg-homolog "$TMP_DB")"
-source_n="$(echo "$COUNT_SQL" | psql_in pg-prod "$DB")"
+source_n="$(echo "$COUNT_SQL" | PSQL_USER=backup_reader psql_in pg-prod "$DB")"
 [ "$restored" = "$source_n" ] || fail "restore com $restored tabelas; $DB no prod tem $source_n"
 ok "restore de teste: $restored tabelas, igual ao prod ($DB)"
