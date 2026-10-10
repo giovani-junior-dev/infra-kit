@@ -40,3 +40,19 @@ setup() { load_step 15-ssh-hardening.sh; }
   run valid_port 70000; [ "$status" -ne 0 ]
   run valid_port abc;   [ "$status" -ne 0 ]
 }
+
+@test "rollback_timer_args agenda o --rollback em 10 min com unit fixa" {
+  run rollback_timer_args /opt/infra-kit/install/15-ssh-hardening.sh
+  [ "$output" = $'--on-active=10min\n--unit=infra-kit-ssh-rollback\n/opt/infra-kit/install/15-ssh-hardening.sh\n--rollback' ]
+}
+
+@test "rollback_timer_args preserva caminho com espaço como um argumento só" {
+  mapfile -t args < <(rollback_timer_args "/opt/meu kit/15-ssh-hardening.sh")
+  [ "${#args[@]}" -eq 4 ]
+  [ "${args[2]}" = "/opt/meu kit/15-ssh-hardening.sh" ]
+}
+
+@test "o --rollback agendado é aceito pelo parse_args" {
+  mapfile -t args < <(rollback_timer_args /x)
+  [ "$(parse_args "${args[3]}")" = rollback ]
+}

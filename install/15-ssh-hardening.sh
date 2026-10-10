@@ -7,12 +7,20 @@
 #   2. o chamador abre uma NOVA conexão com esse comando;
 #   3a. funcionou → `15-ssh-hardening.sh --confirm` fecha a 22 e conclui;
 #   3b. falhou    → `15-ssh-hardening.sh --rollback` remove o drop-in e volta ao SSH antigo.
-# Sessões abertas não caem em nenhum dos passos.
+# Sessões abertas não caem em nenhum dos passos. Se ninguém confirmar em
+# 10 min (ex.: o chamador perdeu toda conexão), um timer systemd roda o
+# --rollback sozinho; o --confirm cancela esse timer.
+#
+# ATENÇÃO: o usuário admin tem sudo sem senha (etapa 10), então a chave SSH
+# dele equivale à chave de root do servidor. Guarde-a com senha (passphrase)
+# e nunca a copie para outra máquina ou repositório.
 # shellcheck source=install/lib.sh
 source "$(dirname "${BASH_SOURCE[0]}")/lib.sh"
 
 DROPIN=/etc/ssh/sshd_config.d/00-infra-kit.conf
 PENDING_NAME=15-ssh-hardening.pending
+ROLLBACK_UNIT=infra-kit-ssh-rollback
+ROLLBACK_DELAY=10min
 
 usage() {
   cat <<'EOF'
@@ -56,6 +64,26 @@ EOF
 # Uso: render_test_command <usuario> <host> <porta>
 render_test_command() {
   printf 'ssh -p %s -o PreferredAuthentications=publickey -o PasswordAuthentication=no -o StrictHostKeyChecking=accept-new %s@%s sudo -n true\n' "$3" "$1" "$2"
+}
+
+# Argumentos do systemd-run que agenda o rollback automático, um por linha.
+# Uso: rollback_timer_args <caminho absoluto deste script>
+rollback_timer_args() {
+  printf '%s
+' "--on-active=${ROLLBACK_DELAY}" "--unit=${ROLLBACK_UNIT}" "$1" --rollback
+}
+
+# Reaplicar substitui o timer anterior (unit transitória não aceita nome repetido).
+schedule_rollback() {
+  local args=()
+  cancel_rollback
+  systemctl reset-failed "${ROLLBACK_UNIT}.service" >/dev/null 2>&1 || true
+  mapfile -t args < <(rollback_timer_args "$(readlink -f "$0")")
+  systemd-run "${args[@]}" >/dev/null
+}
+
+cancel_rollback() {
+  systemctl stop "${ROLLBACK_UNIT}.timer" >/dev/null 2>&1 || true
 }
 
 # Ubuntu 24.04 ativa o sshd por socket: a porta vem do sshd_config via
@@ -111,16 +139,19 @@ do_apply() {
   fi
   mkdir -p "$KIT_STATE"
   date -u +%Y-%m-%dT%H:%M:%SZ > "$KIT_STATE/$PENDING_NAME"
+  schedule_rollback
   local host="${KIT_SERVER_HOST:-$(hostname -I | awk '{print $1}')}"
   log "Teste agora numa NOVA conexão (não feche esta):"
   render_test_command "$KIT_ADMIN_USER" "$host" "$KIT_SSH_PORT"
   log "Funcionou → $0 --confirm   ·   Falhou → $0 --rollback"
+  warn "sem --confirm em ${ROLLBACK_DELAY}, o rollback roda sozinho (${ROLLBACK_UNIT}.timer)"
 }
 
 do_confirm() {
   [ -f "$KIT_STATE/$PENDING_NAME" ] || step_done 15-ssh-hardening ||
     fail "nada para confirmar: rode a etapa sem argumento antes" "$EXIT_PRECONDITION"
   verify_sshd
+  cancel_rollback
   [ "$KIT_SSH_PORT" = "22" ] || ufw delete allow 22/tcp >/dev/null 2>&1 || true
   rm -f "$KIT_STATE/$PENDING_NAME"
   mark_done 15-ssh-hardening
@@ -128,6 +159,8 @@ do_confirm() {
 }
 
 do_rollback() {
+  # Só o .timer: quando roda pelo timer, parar o .service mataria este processo.
+  cancel_rollback
   ufw allow 22/tcp >/dev/null 2>&1 || true
   if [ -f "$KIT_STATE/00-infra-kit.conf.prev" ]; then
     install -m 644 "$KIT_STATE/00-infra-kit.conf.prev" "$DROPIN"
