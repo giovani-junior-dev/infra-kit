@@ -1,0 +1,29 @@
+# Postgres 16 + pgvector — homolog (etapa 50). Senha só por arquivo (lição L1).
+# SEM ports: alcançável só pela infra_net como pg-homolog_postgres:5432 (lição L4).
+# TODO(release): fixar por digest.
+services:
+  postgres:
+    image: pgvector/pgvector:0.8.7-pg16-trixie
+    command: [postgres, -c, max_connections=200, -c, password_encryption=scram-sha-256]
+    environment:
+      POSTGRES_PASSWORD_FILE: /run/secrets/pg_homolog_superuser_pw
+    secrets: [pg_homolog_superuser_pw]
+    volumes: [pg_homolog_data:/var/lib/postgresql/data]
+    networks: [infra_net]
+    healthcheck:
+      test: [CMD-SHELL, pg_isready -U postgres]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    deploy:
+      replicas: 1
+      resources: { limits: { memory: 768M } }
+
+secrets:
+  pg_homolog_superuser_pw: { external: true }
+
+volumes:
+  pg_homolog_data:
+
+networks:
+  infra_net: { external: true }
