@@ -118,3 +118,11 @@ route() { printf '%s|%s|%s\n' "$1" "$2" "$3" >> "$MOCK_ROUTES"; }
   ! grep -q tok-secreto "$MOCK_CALLS"
   grep -q 'Bearer tok-secreto' "$MOCK_CALLS.stdin"
 }
+
+@test "client id do service token vem pelo nome exato" {
+  route GET "/access/service_tokens?name=agente-1" \
+    '{"success":true,"result":[{"name":"agente-10","client_id":"x.access"},{"name":"agente-1","id":"t1","client_id":"c1.access"}]}'
+  run cf_service_token_client_id agente-1
+  [ "$status" -eq 0 ]
+  [ "$output" = "c1.access" ]
+}
