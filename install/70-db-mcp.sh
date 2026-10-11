@@ -40,6 +40,14 @@ pg_prod() {
   docker exec -i "$cid" psql -v ON_ERROR_STOP=1 -qtAX -U postgres -d "${1:-postgres}"
 }
 
+# A imagem do db-mcp acompanha a release do kit: tag v0.9.0-rc1 → imagem 0.9.0-rc1.
+# Uso: version_from_tag <tag> → versão sem o "v"; vazio se não for tag de release.
+version_from_tag() {
+  [[ "${1:-}" =~ ^v([0-9]+\.[0-9]+\.[0-9]+.*)$ ]] && printf '%s
+' "${BASH_REMATCH[1]}"
+  return 0
+}
+
 # GET /health pela overlay, de um container descartável na infra_net.
 health_via_overlay() {
   local body
@@ -70,7 +78,12 @@ main() {
   step_done 50-postgres || fail "rode a etapa 50 antes" "$EXIT_PRECONDITION"
   valid_client_id "$KIT_CF_SERVICE_TOKEN_CLIENT_ID" \
     || fail "KIT_CF_SERVICE_TOKEN_CLIENT_ID inválido no kit.env" "$EXIT_CONFIG"
-  export KIT_DBMCP_VERSION="${KIT_DBMCP_VERSION:-1.0.0}"
+  if [ -z "${KIT_DBMCP_VERSION:-}" ]; then
+    KIT_DBMCP_VERSION="$(version_from_tag "$(git -C "$(dirname "$0")/.." describe --tags --exact-match 2>/dev/null)")"
+    [ -n "$KIT_DBMCP_VERSION" ] || fail "o kit não está numa tag de release: defina KIT_DBMCP_VERSION no kit.env" "$EXIT_CONFIG"
+    set_env_var KIT_DBMCP_VERSION "$KIT_DBMCP_VERSION"
+  fi
+  export KIT_DBMCP_VERSION
 
   local s
   for s in mcp_admin_pw_prod mcp_admin_pw_homolog mcp_control_rw_pw; do
