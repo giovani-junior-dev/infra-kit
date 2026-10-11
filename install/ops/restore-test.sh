@@ -48,6 +48,8 @@ if [ -z "$FILE" ]; then
   FILE="$WORK/$(basename "$key")"
 fi
 [ -f "$FILE" ] || fail "dump não encontrado: $FILE" "$EXIT_CONFIG"
+# O PG Back Web entrega .zip: sem unzip o restore falharia no meio.
+case "$FILE" in *.zip) command -v unzip >/dev/null || apt-get install -y -qq unzip >/dev/null || fail "não consegui instalar o unzip" ;; esac
 log "restaurando $(basename "$FILE") em pg-homolog/$TMP_DB"
 
 echo "CREATE DATABASE $TMP_DB;" | psql_in pg-homolog

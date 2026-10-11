@@ -53,7 +53,7 @@ render_sudoers() {
 install_packages() {
   apt-get update -qq
   apt-get full-upgrade "${APT_OPTS[@]}"
-  apt-get install "${APT_OPTS[@]}" unattended-upgrades fail2ban python3-systemd chrony ufw sudo
+  apt-get install "${APT_OPTS[@]}" unattended-upgrades fail2ban python3-systemd chrony ufw sudo unzip
 }
 
 setup_auto_upgrades() {
