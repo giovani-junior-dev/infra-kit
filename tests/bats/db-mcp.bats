@@ -38,3 +38,10 @@ env_secret_keys_from_70() {
   source "$BATS_TEST_DIRNAME/../../install/90-verify.sh"; set +e
   env_secret_keys
 }
+
+@test "version_from_tag: tag de release vira versão da imagem" {
+  [ "$(version_from_tag v0.9.0-rc1)" = "0.9.0-rc1" ]
+  [ "$(version_from_tag v1.2.3)" = "1.2.3" ]
+  [ -z "$(version_from_tag main)" ]
+  [ -z "$(version_from_tag "")" ]
+}
