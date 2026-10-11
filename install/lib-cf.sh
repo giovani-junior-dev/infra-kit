@@ -23,14 +23,23 @@ cf_api() {
 
 cf_tunnel_payload() { jq -nc --arg n "$1" '{name: $n, config_src: "cloudflare"}'; }
 
-# cf_ingress_payload "host=serviço" ... → config com httpHostHeader e catch-all 404
+# cf_ingress_payload "host=serviço[@hostHeader]" ... → config com httpHostHeader
+# e catch-all 404. Sem @hostHeader, o Host enviado é o próprio hostname. O db-mcp
+# usa a proteção de Host do SDK do MCP (só aceita loopback): passe @127.0.0.1:8002.
 cf_ingress_payload() {
-  local pair rules=()
-  for pair in "$@"; do rules+=("${pair%%=*}" "${pair#*=}"); done
+  local pair rest rules=()
+  for pair in "$@"; do
+    rest="${pair#*=}"
+    if [[ "$rest" == *@* ]]; then
+      rules+=("${pair%%=*}" "${rest%@*}" "${rest##*@}")
+    else
+      rules+=("${pair%%=*}" "$rest" "${pair%%=*}")
+    fi
+  done
   printf '%s\n' "${rules[@]}" | jq -Rnc '
     [inputs] as $a
-    | [range(0; $a|length; 2) | {hostname: $a[.], service: $a[.+1],
-                                  originRequest: {httpHostHeader: $a[.]}}]
+    | [range(0; $a|length; 3) | {hostname: $a[.], service: $a[.+1],
+                                  originRequest: {httpHostHeader: $a[.+2]}}]
     | {config: {ingress: (. + [{service: "http_status:404"}])}}'
 }
 

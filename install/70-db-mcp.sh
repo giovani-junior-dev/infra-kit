@@ -44,7 +44,7 @@ pg_prod() {
 health_via_overlay() {
   local body
   body="$(docker run --rm --network infra_net "$HEALTH_IMAGE" \
-    wget -qO- -T 5 "http://$SERVICE:8002/health" 2>/dev/null)" || return 1
+    wget -qO- -T 5 --header "Host: 127.0.0.1:8002" "http://$SERVICE:8002/health" 2>/dev/null)" || return 1
   grep -q '"ok":true' <<<"$body"
 }
 

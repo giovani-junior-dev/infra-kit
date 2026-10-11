@@ -213,7 +213,7 @@ check_backup() {
 check_dbmcp_health() {
   local body
   body="$(docker run --rm --network infra_net "$HEALTH_IMAGE" \
-    wget -qO- -T 5 http://db-mcp_db-mcp:8002/health 2>/dev/null)"
+    wget -qO- -T 5 --header "Host: 127.0.0.1:8002" http://db-mcp_db-mcp:8002/health 2>/dev/null)"
   if grep -q '"ok":true' <<<"$body"; then
     pass dbmcp.health "db-mcp respondendo"
   else

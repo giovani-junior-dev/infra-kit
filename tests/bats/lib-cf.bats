@@ -126,3 +126,11 @@ route() { printf '%s|%s|%s\n' "$1" "$2" "$3" >> "$MOCK_ROUTES"; }
   [ "$status" -eq 0 ]
   [ "$output" = "c1.access" ]
 }
+
+@test "cf_ingress_payload: @hostHeader troca o Host enviado (db-mcp aceita só loopback)" {
+  run cf_ingress_payload "a.ex.com=http://svc_a:9000" "m.ex.com=http://svc_m:8002@127.0.0.1:8002"
+  [ "$status" -eq 0 ]
+  [ "$(jq -r '.config.ingress[0].originRequest.httpHostHeader' <<<"$output")" = "a.ex.com" ]
+  [ "$(jq -r '.config.ingress[1].service' <<<"$output")" = "http://svc_m:8002" ]
+  [ "$(jq -r '.config.ingress[1].originRequest.httpHostHeader' <<<"$output")" = "127.0.0.1:8002" ]
+}

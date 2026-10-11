@@ -34,7 +34,7 @@ set_env_var KIT_CF_TUNNEL_ID "$TUNNEL_ID"
 cf_api PUT "/accounts/$KIT_CF_ACCOUNT_ID/cfd_tunnel/$TUNNEL_ID/configurations" "$(cf_ingress_payload \
   "$PORTAINER_HOST=http://portainer_portainer:9000" \
   "$PGBACKWEB_HOST=http://pgbackweb_pgbackweb:8085" \
-  "$DBMCP_HOST=http://db-mcp_db-mcp:8002")" >/dev/null
+  "$DBMCP_HOST=http://db-mcp_db-mcp:8002@127.0.0.1:8002")" >/dev/null
 ok "ingress do túnel aplicado"
 
 ZONE_ID="$(cf_zone_id "$KIT_DOMAIN")"
