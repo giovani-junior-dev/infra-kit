@@ -103,8 +103,8 @@ apply_sshd() {
   fi
 }
 
-effective() { sshd -T 2>/dev/null | awk -v k="$1" '$1 == k {print $2; exit}'; }
-effective_ports() { sshd -T 2>/dev/null | awk '$1 == "port" {print $2}'; }
+effective() { ensure_sshd_privsep_dir; sshd -T 2>/dev/null | awk -v k="$1" '$1 == k {print $2; exit}'; }
+effective_ports() { ensure_sshd_privsep_dir; sshd -T 2>/dev/null | awk '$1 == "port" {print $2}'; }
 
 check_admin_key() {
   local keys
@@ -138,6 +138,7 @@ do_apply() {
     changed=1
   fi
   rm -f "$tmp"
+  ensure_sshd_privsep_dir
   if ! sshd -t; then
     do_rollback
     fail "sshd -t recusou a configuração; nada foi recarregado" "$EXIT_FAIL"
@@ -168,7 +169,7 @@ do_confirm() {
   render_sshd_dropin "$KIT_SSH_PORT" "$KIT_ADMIN_USER" > "$tmp"
   if ! cmp -s "$tmp" "$DROPIN"; then
     install -m 644 "$tmp" "$DROPIN"
-    sshd -t || { rm -f "$tmp"; fail "sshd -t recusou a configuração final; NÃO feche esta sessão" "$EXIT_FAIL"; }
+    ensure_sshd_privsep_dir; sshd -t || { rm -f "$tmp"; fail "sshd -t recusou a configuração final; NÃO feche esta sessão" "$EXIT_FAIL"; }
     apply_sshd
   fi
   rm -f "$tmp"
@@ -187,7 +188,7 @@ do_rollback() {
   else
     rm -f "$DROPIN"
   fi
-  sshd -t || fail "sshd -t falhou após o rollback; NÃO feche esta sessão" "$EXIT_FAIL"
+  ensure_sshd_privsep_dir; sshd -t || fail "sshd -t falhou após o rollback; NÃO feche esta sessão" "$EXIT_FAIL"
   apply_sshd
   rm -f "$KIT_STATE/$PENDING_NAME" "$KIT_STATE/15-ssh-hardening.done"
   ok "ssh: rollback feito; configuração anterior em uso"
