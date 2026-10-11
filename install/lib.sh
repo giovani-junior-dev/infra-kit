@@ -124,3 +124,10 @@ replicas_complete() {
   want="${want%% *}"
   [ "$want" -gt 0 ] 2>/dev/null && [ "$cur" = "$want" ]
 }
+
+# sshd -t/-T recusam rodar sem o diretório de privsep (/run/sshd). Com o sshd
+# ativado por socket, ele some quando o ssh.service para (RuntimeDirectory),
+# e o -T volta vazio. Uso: ensure_sshd_privsep_dir (antes de sshd -t ou -T).
+ensure_sshd_privsep_dir() {
+  install -d -m 0755 "${SSHD_PRIVSEP_DIR:-/run/sshd}"
+}

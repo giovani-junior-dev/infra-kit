@@ -51,3 +51,11 @@ setup() {
   run replicas_complete "0/0"; [ "$status" -ne 0 ]
   run replicas_complete "1/1 (max 1 per node)"; [ "$status" -eq 0 ]
 }
+
+@test "ensure_sshd_privsep_dir cria o diretório com 755 e é idempotente" {
+  export SSHD_PRIVSEP_DIR="$BATS_TEST_TMPDIR/run/sshd"
+  ensure_sshd_privsep_dir
+  ensure_sshd_privsep_dir
+  [ -d "$SSHD_PRIVSEP_DIR" ]
+  [ "$(stat -c %a "$SSHD_PRIVSEP_DIR")" = "755" ]
+}

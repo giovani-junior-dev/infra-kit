@@ -93,6 +93,7 @@ flunk() { add_check "$1" false "$2" "$3"; }
 
 check_ssh() {
   local out v
+  ensure_sshd_privsep_dir 2>/dev/null || true
   out="$(sshd -T 2>/dev/null || true)"
   if [ -z "$out" ]; then
     flunk ssh.config "não consegui ler a configuração do SSH (sshd -T)" "rode como root: sudo bash install/90-verify.sh"
