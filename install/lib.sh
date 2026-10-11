@@ -105,3 +105,22 @@ ensure_line() {
   touch "$path"
   grep -qxF -- "$line" "$path" || printf '%s\n' "$line" >> "$path"
 }
+
+# Espera o serviço Swarm ter todas as réplicas rodando (o 1º pull pode demorar).
+# Uso: wait_service_running <servico> [segundos, padrão 300]
+wait_service_running() {
+  local svc="$1" limit="${2:-300}" waited=0 reps
+  while [ "$waited" -lt "$limit" ]; do
+    reps="$(docker service ls --filter "name=$svc" --format '{{.Name}} {{.Replicas}}' | awk -v s="$svc" '$1 == s {print $2}')"
+    if [ -n "$reps" ] && replicas_complete "$reps"; then return 0; fi
+    sleep 5; waited=$((waited + 5))
+  done
+  fail "serviço $svc não ficou de pé em ${limit}s: veja 'docker service ps $svc --no-trunc'" "$EXIT_FAIL"
+}
+
+# Uso: replicas_complete "1/1" → 0 se rodando == desejado e desejado > 0.
+replicas_complete() {
+  local cur="${1%%/*}" want="${1#*/}"
+  want="${want%% *}"
+  [ "$want" -gt 0 ] 2>/dev/null && [ "$cur" = "$want" ]
+}

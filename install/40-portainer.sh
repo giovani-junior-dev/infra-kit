@@ -16,6 +16,8 @@ if ! docker secret inspect portainer_admin_pw >/dev/null 2>&1; then
   printf '%s' "$NEW_PW" | docker secret create portainer_admin_pw - >/dev/null
 fi
 docker stack deploy -c "$STACKS_DIR/portainer.yml" portainer >/dev/null
+wait_service_running portainer_portainer
+wait_service_running portainer_agent
 
 # Verificação
 docker service inspect portainer_portainer >/dev/null || fail "serviço portainer não subiu"

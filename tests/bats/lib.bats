@@ -44,3 +44,10 @@ setup() {
   run step_done 10-base
   [ "$status" -eq 0 ]
 }
+
+@test "replicas_complete: 1/1 ok, 0/1 e 0/0 não" {
+  run replicas_complete "1/1"; [ "$status" -eq 0 ]
+  run replicas_complete "0/1"; [ "$status" -ne 0 ]
+  run replicas_complete "0/0"; [ "$status" -ne 0 ]
+  run replicas_complete "1/1 (max 1 per node)"; [ "$status" -eq 0 ]
+}

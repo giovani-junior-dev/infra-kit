@@ -56,3 +56,31 @@ setup() { load_step 15-ssh-hardening.sh; }
   mapfile -t args < <(rollback_timer_args /x)
   [ "$(parse_args "${args[3]}")" = rollback ]
 }
+
+@test "render_sshd_dropin pendente escuta na porta nova e na 22" {
+  run render_sshd_dropin 2222 deploy 22
+  [ "$(grep -c '^Port ' <<<"$output")" -eq 2 ]
+  [[ "$output" == *"Port 2222"* ]]
+  [[ "$output" == *"Port 22"$'\n'* ]]
+}
+
+@test "render_sshd_dropin final tem só a porta nova" {
+  run render_sshd_dropin 2222 deploy
+  [ "$(grep -c '^Port ' <<<"$output")" -eq 1 ]
+  [ "$(grep -c '^$' <<<"$output")" -eq 0 ]
+}
+
+@test "pending_extra_port: 22 até confirmar, nada depois" {
+  export KIT_STATE="$BATS_TEST_TMPDIR/state" KIT_SSH_PORT=2222
+  run pending_extra_port
+  [ "$output" = "22" ]
+  mark_done 15-ssh-hardening
+  run pending_extra_port
+  [ -z "$output" ]
+}
+
+@test "pending_extra_port: porta 22 configurada não duplica" {
+  export KIT_STATE="$BATS_TEST_TMPDIR/state" KIT_SSH_PORT=22
+  run pending_extra_port
+  [ -z "$output" ]
+}
