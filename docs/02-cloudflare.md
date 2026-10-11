@@ -18,8 +18,8 @@ Painel → **Zero Trust** → escolha um nome de time (vira `seutime.cloudflarea
 > usuários) não cobra nada. Não desista nessa tela; só confira que o plano
 > escolhido é o Free antes de confirmar.
 
-Anote o **Account ID**: painel inicial → coluna da direita, "Account ID".
-Ele vai no `kit.env` como `KIT_CF_ACCOUNT_ID`.
+Não precisa anotar o Account ID: a etapa 30 descobre sozinha pela zona do seu
+domínio e grava no `kit.env`.
 
 ## 3. API token com escopo mínimo
 

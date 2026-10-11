@@ -14,12 +14,18 @@ SERVICE_TOKEN_NAME="agente-1"
 
 require_root
 load_env
-require_var KIT_DOMAIN KIT_OWNER_EMAIL KIT_CF_ACCOUNT_ID
+require_var KIT_DOMAIN KIT_OWNER_EMAIL
 command -v jq >/dev/null || { apt-get install -y -qq jq >/dev/null || fail "não consegui instalar o jq"; }
 
 [ -t 0 ] && fail "passe o API token pelo stdin (printf '%s' \"\$TOKEN\" | $0)" "$EXIT_CONFIG"
 IFS= read -r CF_API_TOKEN || true
 [ -n "${CF_API_TOKEN:-}" ] || fail "API token vazio no stdin" "$EXIT_CONFIG"
+
+if [ -z "${KIT_CF_ACCOUNT_ID:-}" ]; then
+  KIT_CF_ACCOUNT_ID="$(cf_zone_account_id "$KIT_DOMAIN")"
+  [ -n "$KIT_CF_ACCOUNT_ID" ] || fail "zona $KIT_DOMAIN não encontrada: o token tem Zone:Read nela?" "$EXIT_CONFIG"
+  set_env_var KIT_CF_ACCOUNT_ID "$KIT_CF_ACCOUNT_ID"
+fi
 
 # Origem de cada subdomínio: serviço do swarm na infra_net (stack_serviço).
 PORTAINER_HOST="portainer.$KIT_DOMAIN"

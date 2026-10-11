@@ -78,6 +78,11 @@ cf_zone_id() {
   cf_api GET "/zones?name=$1" | jq -r '.[0].id // empty'
 }
 
+# O aluno não precisa achar o ID da conta: ele vem da zona do domínio.
+cf_zone_account_id() {
+  cf_api GET "/zones?name=$1" | jq -r '.[0].account.id // empty'
+}
+
 # Cria ou corrige o CNAME proxied para o túnel.
 cf_ensure_cname() {
   local zone="$1" name="$2" tunnel="$3" rec
