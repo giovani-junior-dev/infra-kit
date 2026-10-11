@@ -93,16 +93,19 @@ docker service inspect cloudflared_cloudflared >/dev/null || fail "serviço clou
 mark_done 30-cloudflare
 ok "etapa 30 concluída"
 
+# O secret não vai para a tela: a saída desta etapa pode cair na conversa do
+# Claude (plugin) e a Cloudflare não mostra o secret de novo. Fica num arquivo
+# só do root, lido depois pelo aluno no terminal dele.
+AGENT_SECRET_FILE="$KIT_DIR/$SERVICE_TOKEN_NAME.secret"
 if [ -n "$NEW_TOKEN_JSON" ]; then
+  (umask 077; jq -r '.client_secret' <<<"$NEW_TOKEN_JSON" > "$AGENT_SECRET_FILE")
   cat <<EOF
 
 =====================================================================
- ATENÇÃO: credencial do agente mostrada UMA ÚNICA VEZ.
- Copie agora para um gerenciador de senhas. A Cloudflare não mostra
- o secret de novo; se perder, apague o service token $SERVICE_TOKEN_NAME
- no painel e rode esta etapa outra vez.
-   CF-Access-Client-Id:     $(jq -r '.client_id' <<<"$NEW_TOKEN_JSON")
-   CF-Access-Client-Secret: $(jq -r '.client_secret' <<<"$NEW_TOKEN_JSON")
+ Credencial do agente criada.
+   CF-Access-Client-Id: $(jq -r '.client_id' <<<"$NEW_TOKEN_JSON")
+   Client Secret: gravado em $AGENT_SECRET_FILE (só root lê)
+ A Cloudflare não mostra o secret de novo: guarde esse arquivo.
 =====================================================================
 EOF
 fi

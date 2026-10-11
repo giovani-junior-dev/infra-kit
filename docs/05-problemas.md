@@ -53,6 +53,13 @@ Problemas que já aconteceram com a gente, em servidor de verdade. Antes de qual
 
 **Como sair:** considere a senha vazada. `/infra:trocar-senha` (Postgres) ou gere um secret novo para o serviço e tire a senha do arquivo.
 
+## O /infra:verificar acusa "nenhum backup encontrado"
+
+O PG Back Web está instalado, mas ainda não tem backup cadastrado ou nunca rodou.
+Abra `https://pgbackweb.<seu-dominio>`, cadastre o banco (veja `docs/backups.md`),
+crie o backup com agenda diária e clique em **Run backup now**. O item fica verde
+quando existe um backup com sucesso de menos de 26 horas.
+
 ## Uma etapa falhou
 
 Leia a linha `[falha]`. O código de saída diz o tipo:

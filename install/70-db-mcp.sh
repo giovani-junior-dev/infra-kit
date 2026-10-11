@@ -114,7 +114,8 @@ main() {
   cat <<EOF
 
 Na SUA máquina (não no servidor), conecte o Claude Code ao db-mcp. Troque
-<COLE_AQUI_O_CLIENT_SECRET> pelo Client Secret que a etapa 30 mostrou uma vez:
+<COLE_AQUI_O_CLIENT_SECRET> pelo Client Secret gravado pela etapa 30 em
+$KIT_DIR/agente-1.secret (leia com: sudo cat $KIT_DIR/agente-1.secret):
 
 $(render_mcp_add_command "$KIT_DOMAIN" "$KIT_CF_SERVICE_TOKEN_CLIENT_ID")
 
