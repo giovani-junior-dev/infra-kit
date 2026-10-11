@@ -84,7 +84,6 @@ KIT_SSH_PORT=<porta>
 KIT_ADMIN_USER=<admin>
 KIT_ADMIN_PUBKEY="<conteúdo de <chave>.pub>"
 KIT_SUBDOMAINS="portainer pgbackweb db-mcp"
-KIT_CF_ACCOUNT_ID=<account id>
 KIT_SERVER_HOST=<ip>
 EOF
 ```

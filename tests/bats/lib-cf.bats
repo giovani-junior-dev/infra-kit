@@ -134,3 +134,10 @@ route() { printf '%s|%s|%s\n' "$1" "$2" "$3" >> "$MOCK_ROUTES"; }
   [ "$(jq -r '.config.ingress[1].service' <<<"$output")" = "http://svc_m:8002" ]
   [ "$(jq -r '.config.ingress[1].originRequest.httpHostHeader' <<<"$output")" = "127.0.0.1:8002" ]
 }
+
+@test "cf_zone_account_id: ID da conta vem da zona do domínio" {
+  route GET "/zones?name=ex.com" '{"success":true,"result":[{"id":"z1","account":{"id":"acc-da-zona"}}]}'
+  run cf_zone_account_id ex.com
+  [ "$status" -eq 0 ]
+  [ "$output" = "acc-da-zona" ]
+}
