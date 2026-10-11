@@ -33,6 +33,8 @@ export interface RuntimeConfig {
   masksDir?: string
   /** DB_MCP_PG_BIN_DIR: pasta do pg_dump/pg_restore 16 (senão PATH). */
   pgBinDir?: string
+  /** DB_MCP_BACKUP_ROLE: recebe CONNECT em todo banco criado (ex.: backup_reader). */
+  backupRole?: string
   env: Record<string, string | undefined>
 }
 
@@ -47,7 +49,7 @@ export async function createRuntime(cfg: RuntimeConfig) {
   async function createAndRegister(name: string, env: TargetEnv, opId: string) {
     const adminDsn = cfg.adminDsns[env]
     if (!adminDsn || !cfg.targetsKey) throw new Error(`DB_MCP_ADMIN_DSN_${env.toUpperCase()} e DB_MCP_TARGETS_KEY são obrigatórios para criar banco`)
-    const created = await createDatabase(adminDsn, name, env)
+    const created = await createDatabase(adminDsn, name, env, cfg.backupRole)
     await store.saveTarget(created.target, cfg.targetsKey, opId)
     targets.set(targetRef(created.target), created.target)
     return { database: name, roles: created.roles }
@@ -69,6 +71,7 @@ export async function createRuntime(cfg: RuntimeConfig) {
       adminDsns: cfg.adminDsns,
       pgBinDir: cfg.pgBinDir,
       masksDir: cfg.masksDir,
+      backupRole: cfg.backupRole,
     },
   })
 

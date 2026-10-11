@@ -51,6 +51,7 @@ const rt = await createRuntime({
   masksDir: optional('DB_MCP_MASKS_DIR'),
   // Imagem traz o cliente PG 16 do PGDG nesta pasta.
   pgBinDir: optional('DB_MCP_PG_BIN_DIR') ?? '/usr/lib/postgresql/16/bin',
+  backupRole: optional('DB_MCP_BACKUP_ROLE'),
   env,
 })
 

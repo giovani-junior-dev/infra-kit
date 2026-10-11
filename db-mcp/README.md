@@ -41,6 +41,7 @@ DSN que já traz senha junto com `X_PASSWORD` é erro.
 | `DB_MCP_ADMIN_DSN_HML`, `DB_MCP_ADMIN_DSN_PROD` | para criar banco | role `mcp_admin` (CREATEDB, CREATEROLE, nunca superuser) |
 | `DB_MCP_TARGETS` + `DB_MCP_TARGET_<NOME>_{ENV,DSN_RW,DSN_EXEC,DSN_DDL}` | não | alvos fixos pelo env |
 | `DB_MCP_MASKS_DIR` | não | pasta das máscaras do mirror (imagem: `/app/masks`) |
+| `DB_MCP_BACKUP_ROLE` | não | role de backup (ex.: `backup_reader`) que recebe `CONNECT` em todo banco criado, promovido ou recriado pelo mirror; ausente no servidor = pula e loga |
 | `DB_MCP_PG_BIN_DIR` | não | pasta do `pg_dump`/`pg_restore` 16 (padrão `/usr/lib/postgresql/16/bin`) |
 | `NOTIFY_WEBHOOK_URL` | não | recebe `POST` JSON `{opId,target,kind,estimatedRows,agentName,link}` a cada pedido |
 | `NOTIFY_TELEGRAM_BOT_TOKEN`, `NOTIFY_TELEGRAM_CHAT_ID` | não | aviso do pedido pelo Telegram |

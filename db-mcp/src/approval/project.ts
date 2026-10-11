@@ -32,6 +32,7 @@ export interface ProjectDeps {
   adminDsns: Partial<Record<TargetEnv, string>>
   pgBinDir?: string
   masksDir?: string
+  backupRole?: string
 }
 
 const qid = (s: string) => pg.escapeIdentifier(s)
@@ -174,10 +175,10 @@ export async function mirrorToHomolog(deps: ProjectDeps, op: PendingOp): Promise
       try { return await fn() } catch (e) { throw new OpFailure(errMsg(e), { ...result, step: name, error: errMsg(e) }) }
     }
     await step('restore', async () => {
-      await applyDatabaseGrants(hml.dsnDdl, name, dbUser(hml.dsnRw), dbUser(hml.dsnExec))
+      await applyDatabaseGrants(hml.dsnDdl, name, dbUser(hml.dsnRw), dbUser(hml.dsnExec), deps.backupRole)
       await runPgTool(deps.pgBinDir, 'pg_restore', restoreArgs(file, name), hml.dsnDdl)
       // Restore cria as tabelas como a dona: reaplica os grants nas tabelas novas.
-      await applyDatabaseGrants(hml.dsnDdl, name, dbUser(hml.dsnRw), dbUser(hml.dsnExec))
+      await applyDatabaseGrants(hml.dsnDdl, name, dbUser(hml.dsnRw), dbUser(hml.dsnExec), deps.backupRole)
     })
     if (maskSql) {
       await step('mask', async () => {
