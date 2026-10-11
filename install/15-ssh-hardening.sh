@@ -2,10 +2,11 @@
 # Etapa 15 — SSH só por chave, sem root, porta configurável, UFW. Lição L3.
 #
 # Trava anti-lockout em 3 tempos:
-#   1. sem argumento: aplica, deixa a porta 22 aberta no UFW, grava o marcador
+#   1. sem argumento: aplica com o sshd escutando na 22 E na porta nova (22 aberta
+#      no UFW), grava o marcador
 #      state/15-ssh-hardening.pending e imprime o comando de teste;
 #   2. o chamador abre uma NOVA conexão com esse comando;
-#   3a. funcionou → `15-ssh-hardening.sh --confirm` fecha a 22 e conclui;
+#   3a. funcionou → `15-ssh-hardening.sh --confirm` tira a 22 do sshd e do UFW e conclui;
 #   3b. falhou    → `15-ssh-hardening.sh --rollback` remove o drop-in e volta ao SSH antigo.
 # Sessões abertas não caem em nenhum dos passos. Se ninguém confirmar em
 # 10 min (ex.: o chamador perdeu toda conexão), um timer systemd roda o
@@ -48,12 +49,16 @@ valid_port() {
 }
 
 # O drop-in 00- vence os arquivos do cloud-init: no sshd o 1º valor lido vale.
+# Uso: render_sshd_dropin <porta> <usuario> [porta_extra]. A porta extra (22)
+# só existe enquanto o hardening está pendente: se o provedor bloquear a porta
+# nova, o aluno ainda entra pela 22 com a chave.
 render_sshd_dropin() {
-  local port="$1" user="$2"
+  local port="$1" user="$2" extra="${3:-}"
   cat <<EOF
 # gerado pelo infra-kit (install/15-ssh-hardening.sh)
 Port ${port}
-PermitRootLogin no
+${extra:+Port ${extra}
+}PermitRootLogin no
 PasswordAuthentication no
 KbdInteractiveAuthentication no
 PubkeyAuthentication yes
@@ -99,6 +104,7 @@ apply_sshd() {
 }
 
 effective() { sshd -T 2>/dev/null | awk -v k="$1" '$1 == k {print $2; exit}'; }
+effective_ports() { sshd -T 2>/dev/null | awk '$1 == "port" {print $2}'; }
 
 check_admin_key() {
   local keys
@@ -106,10 +112,15 @@ check_admin_key() {
   [ -s "$keys" ] || fail "$KIT_ADMIN_USER sem chave em $keys: rode a etapa 10 antes (evita lockout)" "$EXIT_PRECONDITION"
 }
 
+# Uso: pending_extra_port → imprime 22 enquanto o hardening não foi confirmado.
+pending_extra_port() {
+  step_done 15-ssh-hardening || [ "$KIT_SSH_PORT" = "22" ] || echo 22
+}
+
 setup_ufw() {
   ufw default deny incoming >/dev/null
   ufw default allow outgoing >/dev/null
-  ufw allow 22/tcp >/dev/null          # fica até o --confirm (sessão atual)
+  [ -z "$(pending_extra_port)" ] || ufw allow 22/tcp >/dev/null   # até o --confirm
   ufw allow "${KIT_SSH_PORT}/tcp" >/dev/null
   ufw --force enable >/dev/null
 }
@@ -120,7 +131,7 @@ do_apply() {
   local tmp changed=0
   mkdir -p "$KIT_STATE"
   tmp="$(mktemp)"
-  render_sshd_dropin "$KIT_SSH_PORT" "$KIT_ADMIN_USER" > "$tmp"
+  render_sshd_dropin "$KIT_SSH_PORT" "$KIT_ADMIN_USER" "$(pending_extra_port)" > "$tmp"
   if ! [ -f "$DROPIN" ] || ! cmp -s "$tmp" "$DROPIN"; then
     [ -f "$DROPIN" ] && cp -p "$DROPIN" "$KIT_STATE/00-infra-kit.conf.prev"
     install -m 644 "$tmp" "$DROPIN"
@@ -152,6 +163,15 @@ do_confirm() {
     fail "nada para confirmar: rode a etapa sem argumento antes" "$EXIT_PRECONDITION"
   verify_sshd
   cancel_rollback
+  local tmp
+  tmp="$(mktemp)"
+  render_sshd_dropin "$KIT_SSH_PORT" "$KIT_ADMIN_USER" > "$tmp"
+  if ! cmp -s "$tmp" "$DROPIN"; then
+    install -m 644 "$tmp" "$DROPIN"
+    sshd -t || { rm -f "$tmp"; fail "sshd -t recusou a configuração final; NÃO feche esta sessão" "$EXIT_FAIL"; }
+    apply_sshd
+  fi
+  rm -f "$tmp"
   [ "$KIT_SSH_PORT" = "22" ] || ufw delete allow 22/tcp >/dev/null 2>&1 || true
   rm -f "$KIT_STATE/$PENDING_NAME"
   mark_done 15-ssh-hardening
@@ -174,7 +194,7 @@ do_rollback() {
 }
 
 verify_sshd() {
-  [ "$(effective port)" = "$KIT_SSH_PORT" ] || fail "sshd efetivo não está na porta $KIT_SSH_PORT" "$EXIT_FAIL"
+  grep -qx "$KIT_SSH_PORT" <<<"$(effective_ports)" || fail "sshd efetivo não está na porta $KIT_SSH_PORT" "$EXIT_FAIL"
   [ "$(effective permitrootlogin)" = "no" ] || fail "PermitRootLogin efetivo não é no" "$EXIT_FAIL"
   [ "$(effective passwordauthentication)" = "no" ] || fail "PasswordAuthentication efetivo não é no" "$EXIT_FAIL"
   [ "$(effective kbdinteractiveauthentication)" = "no" ] || fail "KbdInteractiveAuthentication efetivo não é no" "$EXIT_FAIL"

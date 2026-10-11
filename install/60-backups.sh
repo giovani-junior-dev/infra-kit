@@ -33,6 +33,7 @@ fi
 register_consumer pbw_conn_string pgbackweb pgbackweb pgbackweb
 
 docker stack deploy -c "$STACKS_DIR/pgbackweb.yml" pgbackweb >/dev/null
+wait_service_running pgbackweb_pgbackweb
 
 # Verificação
 docker service inspect pgbackweb_pgbackweb >/dev/null || fail "serviço pgbackweb não subiu"
