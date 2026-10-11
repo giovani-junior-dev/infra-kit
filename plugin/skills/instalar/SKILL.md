@@ -124,7 +124,7 @@ O token nunca passa pelo chat nem fica gravado no servidor. Duas formas, o aluno
 - Digitado agora, **num terminal seu fora do Claude Code** (o que passa pelo `!` fica no histórico da conversa; `read -s` não mostra o que é digitado):
   `read -rs -p 'Token Cloudflare: ' T && printf '%s' "$T" | ssh -i <chave> -p <porta> <admin>@<ip> 'sudo bash /opt/infra-kit/src/install/30-cloudflare.sh'; unset T`
 
-Na primeira vez a etapa mostra **uma única vez** o Client Id e o Client Secret do service token `agente-1`. Peça para o aluno copiar os dois para um gerenciador de senhas antes de continuar. Se você rodou pela forma do arquivo, a saída apareceu para você: **não repita o secret** na resposta; diga onde ele está na saída e peça para o aluno guardar. Depois pode revogar o API token no painel.
+Na primeira vez a etapa cria o service token `agente-1`: mostra o Client Id e grava o Client Secret em `/opt/infra-kit/agente-1.secret` (só root lê). O secret nunca aparece na saída. Peça para o aluno guardar uma cópia num gerenciador de senhas (passo final abaixo). Depois pode revogar o API token no painel.
 
 ### Etapa 40
 
@@ -142,10 +142,10 @@ Depois dela o aluno cadastra no painel do PG Back Web o destino R2, o banco e a 
 
 ## 7. Fim: conectar o Claude Code ao db-mcp
 
-A etapa 70 termina imprimindo o `claude mcp add` pronto, com o Client Id do `kit.env` e `<COLE_AQUI_O_CLIENT_SECRET>` no lugar do secret. Mostre esse comando ao aluno. Ele roda **num terminal dele, fora do Claude Code** (o secret não pode entrar na conversa). Para não colar o secret na linha de comando, a forma equivalente com `read`:
+A etapa 70 termina imprimindo o `claude mcp add` com o Client Id do `kit.env` e `<COLE_AQUI_O_CLIENT_SECRET>` no lugar do secret. O aluno roda **num terminal dele, fora do Claude Code** (o secret não pode entrar na conversa). Forma recomendada, que busca o secret direto do servidor sem mostrar:
 
 ```
-read -r -p 'Client Id: ' CID && read -rs -p 'Client Secret: ' CS && echo && claude mcp add --scope user --transport http db-mcp https://db-mcp.<dominio>/mcp   --header "CF-Access-Client-Id: $CID" --header "CF-Access-Client-Secret: $CS"; unset CID CS
+CS=$(ssh -i <chave> -p <porta> <admin>@<ip> 'sudo cat /opt/infra-kit/agente-1.secret') && claude mcp add --scope user --transport http db-mcp https://db-mcp.<dominio>/mcp --header "CF-Access-Client-Id: <client id>" --header "CF-Access-Client-Secret: $CS"; unset CS
 claude mcp get db-mcp
 ```
 
