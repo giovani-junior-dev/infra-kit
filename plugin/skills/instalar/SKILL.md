@@ -1,6 +1,6 @@
 ---
 name: instalar
-description: Instala o infra-kit numa VPS Ubuntu 24.04 do aluno, do zero até o db-mcp conectado no Claude Code. Entrevista, checklist da Cloudflare, kit.env, clone da release e etapas 00 a 70 por SSH, uma por vez. Use quando o aluno pedir para instalar, montar o servidor, configurar a VPS ou retomar uma instalação parada.
+description: Instala o infra-kit numa VPS Ubuntu 24.04 ou 26.04 do aluno, do zero até o db-mcp conectado no Claude Code. Entrevista, checklist da Cloudflare, kit.env, clone da release e etapas 00 a 70 por SSH, uma por vez. Use quando o aluno pedir para instalar, montar o servidor, configurar a VPS ou retomar uma instalação parada.
 argument-hint: "[retomar da etapa NN]"
 disable-model-invocation: true
 ---
@@ -23,7 +23,7 @@ Pergunte, uma coisa por vez, e repita o resumo no fim para o aluno confirmar:
 
 | Dado | Exemplo | Observação |
 |---|---|---|
-| IP da VPS | `203.0.113.10` | Ubuntu 24.04, 2 vCPU, 4 GB RAM, 40 GB disco |
+| IP da VPS | `203.0.113.10` | Ubuntu 24.04 ou 26.04, 2 vCPU, 4 GB RAM, 40 GB disco |
 | Usuário inicial | `root` ou `ubuntu` | o que o provedor entregou |
 | Chave SSH | `~/.ssh/id_ed25519` | se não existir, gere (abaixo) |
 | Domínio | `meudominio.com` | já na Cloudflare |
@@ -97,7 +97,7 @@ Todas assim: `$SSH 'sudo bash /opt/infra-kit/src/install/<etapa>.sh'`. Antes de 
 
 | Etapa | O que faz | Tempo |
 |---|---|---|
-| `00-preflight` | confere Ubuntu 24.04, CPU, disco, RAM e se o domínio está na Cloudflare | 1 min |
+| `00-preflight` | confere Ubuntu 24.04/26.04, CPU, disco, RAM e se o domínio está na Cloudflare | 1 min |
 | `10-base` | atualiza o sistema, fail2ban, swap, fuso, cria o usuário admin com a chave | 5–10 min |
 | `15-ssh-hardening` | SSH só por chave, sem root, porta nova (fluxo especial abaixo) | 2 min |
 | `20-docker-swarm` | Docker oficial, Swarm, rede `infra_net`, bloqueio do Docker passando por cima do UFW | 3 min |

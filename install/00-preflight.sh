@@ -8,14 +8,15 @@ MIN_CPUS=2
 MIN_DISK_GB=35   # VPS "40 GB" reporta ~38 GB úteis em /
 REC_MEM_MB=3500  # VPS "4 GB" reporta ~3.8 GB em MemTotal
 
-# Lê um os-release e confirma Ubuntu 24.04. Uso: check_os [arquivo]
+# Lê um os-release e confirma Ubuntu LTS suportado (24.04 ou 26.04). Uso: check_os [arquivo]
 check_os() {
   local file="${1:-/etc/os-release}" id version
   id="$(sed -n 's/^ID=//p' "$file" | tr -d '"')"
   version="$(sed -n 's/^VERSION_ID=//p' "$file" | tr -d '"')"
-  if [ "$id" != "ubuntu" ] || [ "$version" != "24.04" ]; then
-    fail "sistema ${id:-?} ${version:-?} não suportado: o kit só roda em Ubuntu 24.04" "$EXIT_PRECONDITION"
-  fi
+  case "$id/$version" in
+    ubuntu/24.04|ubuntu/26.04) ;;
+    *) fail "sistema ${id:-?} ${version:-?} não suportado: o kit só roda em Ubuntu 24.04 ou 26.04" "$EXIT_PRECONDITION" ;;
+  esac
 }
 
 # Avalia recursos. Uso: check_resources <cpus> <mem_mb> <disk_gb>
@@ -54,7 +55,7 @@ main() {
     "$(df -BG --output=size / | tail -1 | tr -dc '0-9')"
   check_domain "$KIT_DOMAIN"
   mark_done 00-preflight
-  ok "preflight: Ubuntu 24.04, recursos e DNS da Cloudflare conferidos"
+  ok "preflight: Ubuntu suportado, recursos e DNS da Cloudflare conferidos"
 }
 
 if [ "${BASH_SOURCE[0]}" = "$0" ]; then main "$@"; fi

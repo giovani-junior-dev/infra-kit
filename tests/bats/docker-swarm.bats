@@ -10,6 +10,11 @@ setup() { load_step 20-docker-swarm.sh; }
   [[ "$output" == *"Signed-By: /etc/apt/keyrings/docker.asc"* ]]
 }
 
+@test "render_docker_sources aceita o codinome do Ubuntu 26.04 (resolute)" {
+  run render_docker_sources resolute amd64
+  [[ "$output" == *"Suites: resolute"* ]]
+}
+
 @test "render_daemon_json: rotação 20m x 5 como strings" {
   run render_daemon_json
   [[ "$output" == *'"max-size": "20m"'* ]]

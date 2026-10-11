@@ -11,11 +11,17 @@ os_release() { printf 'ID=%s\nVERSION_ID="%s"\n' "$1" "$2" > "$BATS_TEST_TMPDIR/
   [ "$status" -eq 0 ]
 }
 
+@test "check_os aceita Ubuntu 26.04" {
+  os_release ubuntu 26.04
+  run check_os "$BATS_TEST_TMPDIR/os"
+  [ "$status" -eq 0 ]
+}
+
 @test "check_os recusa outro sistema com código 3" {
   os_release ubuntu 22.04
   run check_os "$BATS_TEST_TMPDIR/os"
   [ "$status" -eq 3 ]
-  [[ "$output" == *"Ubuntu 24.04"* ]]
+  [[ "$output" == *"Ubuntu 24.04 ou 26.04"* ]]
 }
 
 @test "check_resources aborta com 1 vCPU" {

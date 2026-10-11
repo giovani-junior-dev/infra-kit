@@ -13,7 +13,7 @@ Nenhuma porta aberta além do SSH. Painéis e MCP ficam atrás do Cloudflare Tun
 
 ## Você precisa de
 
-- Uma VPS com **Ubuntu 24.04** (mínimo 2 vCPU, 4 GB RAM, 40 GB disco)
+- Uma VPS com **Ubuntu 24.04 ou 26.04** (mínimo 2 vCPU, 4 GB RAM, 40 GB disco)
 - Um **domínio na Cloudflare** (plano Free serve; o Zero Trust pede cartão no cadastro, mas o plano Free não cobra)
 - **Claude Code** instalado no seu computador
 

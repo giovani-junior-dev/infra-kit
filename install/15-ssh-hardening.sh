@@ -86,7 +86,7 @@ cancel_rollback() {
   systemctl stop "${ROLLBACK_UNIT}.timer" >/dev/null 2>&1 || true
 }
 
-# Ubuntu 24.04 ativa o sshd por socket: a porta vem do sshd_config via
+# Ubuntu 24.04 e 26.04 ativam o sshd por socket: a porta vem do sshd_config via
 # sshd-socket-generator e só muda com daemon-reload + restart do ssh.socket
 # (debian/README.Debian do pacote openssh no Ubuntu noble).
 apply_sshd() {
