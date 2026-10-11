@@ -5,6 +5,9 @@ O PG Back Web conecta nos bancos com a role `backup_reader`: só leitura
 servidores e guarda as senhas nos secrets `backup_reader_pw_prod` e
 `backup_reader_pw_homolog`.
 
+Banco criado pelo db-mcp já nasce com `CONNECT` para a `backup_reader`
+(`DB_MCP_BACKUP_ROLE` em `stacks/db-mcp.yml`); `pg_read_all_data` sozinho não dá CONNECT.
+
 ## 1. Ler a senha (uma vez)
 
 No servidor:

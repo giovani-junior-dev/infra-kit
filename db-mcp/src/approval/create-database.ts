@@ -30,7 +30,7 @@ function dsnFor(adminDsn: string, user: string, password: string, db: string): s
 // openssl rand -hex 24) e só saem daqui dentro dos DSNs, que o chamador cifra.
 // Grants reproduzem sql/roles/create-{rw,executor}-role.sql;
 // a role mcp_<db>_ddl é dona do banco (e do schema public, PG15+).
-export async function createDatabase(adminDsn: string, name: string, env: TargetEnv): Promise<CreatedDatabase> {
+export async function createDatabase(adminDsn: string, name: string, env: TargetEnv, backupRole?: string): Promise<CreatedDatabase> {
   const lit = (s: string) => pg.escapeLiteral(s)
   // Mesmo padrão dos SQLs de infra: mcp_<db>_{rw,exec,ddl}.
   const roles = { rw: `mcp_${name}_rw`, exec: `mcp_${name}_exec`, ddl: `mcp_${name}_ddl` }
@@ -54,7 +54,7 @@ export async function createDatabase(adminDsn: string, name: string, env: Target
     dsnDdl: dsnFor(adminDsn, roles.ddl, pw.ddl, name),
   })
 
-  await applyDatabaseGrants(target.dsnDdl, name, roles.rw, roles.exec)
+  await applyDatabaseGrants(target.dsnDdl, name, roles.rw, roles.exec, backupRole)
 
   return { target, roles: [roles.rw, roles.exec, roles.ddl] }
 }
@@ -80,12 +80,13 @@ export async function createOwnedDatabase(adminDsn: string, name: string, ddlRol
 }
 
 /** Grants feitos pela dona do banco, conectada nele (default privileges são por banco). */
-export async function applyDatabaseGrants(ddlDsn: string, name: string, rwRole: string, execRole: string): Promise<void> {
+export async function applyDatabaseGrants(ddlDsn: string, name: string, rwRole: string, execRole: string, backupRole?: string): Promise<void> {
   await withClient(ddlDsn, async (c) => {
     const rw = id(rwRole)
     const ex = id(execRole)
     await c.query(`REVOKE ALL ON DATABASE ${id(name)} FROM PUBLIC`)
     await c.query(`GRANT CONNECT ON DATABASE ${id(name)} TO ${rw}, ${ex}`)
+    if (backupRole) await grantBackupConnect(c, name, backupRole)
     await c.query('REVOKE CREATE ON SCHEMA public FROM PUBLIC')
     await c.query(`GRANT USAGE ON SCHEMA public TO ${rw}, ${ex}`)
     await c.query(`ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT SELECT, INSERT, UPDATE ON TABLES TO ${rw}`)
@@ -96,4 +97,22 @@ export async function applyDatabaseGrants(ddlDsn: string, name: string, rwRole: 
     await c.query(`GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO ${ex}`)
     await c.query(`GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO ${rw}, ${ex}`)
   })
+}
+
+type Queryable = { query(sql: string, params?: unknown[]): Promise<{ rows: unknown[] }> }
+
+export const backupConnectSql = (db: string, role: string) => `GRANT CONNECT ON DATABASE ${id(db)} TO ${id(role)}`
+
+/**
+ * DB_MCP_BACKUP_ROLE: o REVOKE ALL FROM PUBLIC tira o CONNECT e pg_read_all_data não o
+ * devolve. Role ausente no servidor (ex.: kit sem backup) só loga e segue.
+ */
+export async function grantBackupConnect(c: Queryable, db: string, role: string, log: (m: string) => void = console.log): Promise<boolean> {
+  const { rows } = await c.query('SELECT 1 FROM pg_roles WHERE rolname = $1', [role])
+  if (!rows.length) {
+    log(`[db-mcp] role de backup ${role} não existe neste servidor; CONNECT em ${db} não concedido`)
+    return false
+  }
+  await c.query(backupConnectSql(db, role))
+  return true
 }

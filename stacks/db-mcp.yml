@@ -12,6 +12,7 @@ services:
       DB_MCP_ADMIN_DSN_PROD_PASSWORD_FILE: /run/secrets/mcp_admin_pw_prod
       DB_MCP_ADMIN_DSN_HML: postgres://mcp_admin@pg-homolog_postgres:5432/postgres
       DB_MCP_ADMIN_DSN_HML_PASSWORD_FILE: /run/secrets/mcp_admin_pw_homolog
+      DB_MCP_BACKUP_ROLE: backup_reader
       APPROVAL_SECRET_FILE: /run/secrets/dbmcp_approval_secret
       DB_MCP_TARGETS_KEY_FILE: /run/secrets/dbmcp_targets_key
       APPROVAL_BASE_URL: https://db-mcp.${KIT_DOMAIN}
