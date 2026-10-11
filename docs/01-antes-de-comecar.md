@@ -8,12 +8,12 @@ Você conversa com o Claude Code; ele roda os scripts no servidor e explica cada
 
 | Item | Detalhe | Custo |
 |---|---|---|
-| VPS | **Ubuntu 24.04**, mínimo 2 vCPU, 4 GB de RAM, 40 GB de disco | mensalidade do provedor que você escolher |
+| VPS | **Ubuntu 24.04 ou 26.04**, mínimo 2 vCPU, 4 GB de RAM, 40 GB de disco | mensalidade do provedor que você escolher |
 | Domínio | qualquer um, com DNS na Cloudflare | anuidade do registro |
 | Cloudflare | plano Free + Zero Trust Free + R2 | R$ 0 no uso normal (veja abaixo) |
 | Claude Code | instalado no seu computador | sua assinatura atual |
 
-Só Ubuntu 24.04 é testado. Outro sistema: o script para logo no começo, de propósito.
+Só Ubuntu 24.04 e 26.04 (LTS) são suportados. Outro sistema: o script para logo no começo, de propósito.
 
 **Sobre o cartão na Cloudflare:** o cadastro do Zero Trust e do R2 pede cartão. O plano Free do Zero Trust (até 50 usuários) não cobra, e o R2 não cobra até 10 GB por mês. Confira que escolheu **Free** antes de confirmar.
 
