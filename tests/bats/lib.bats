@@ -59,3 +59,20 @@ setup() {
   [ -d "$SSHD_PRIVSEP_DIR" ]
   [ "$(stat -c %a "$SSHD_PRIVSEP_DIR")" = "755" ]
 }
+
+@test "pbw_register_sql: idempotente, cifra a conexão e escapa aspas" {
+  run pbw_register_sql prod-loja "postgresql://u:p'x@h/loja" k3y
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"pgp_sym_encrypt('postgresql://u:p''x@h/loja', 'k3y')"* ]]
+  [[ "$output" == *"WHERE NOT EXISTS (SELECT 1 FROM databases WHERE name = 'prod-loja')"* ]]
+  [[ "$output" == *"NOT EXISTS (SELECT 1 FROM backups b WHERE b.database_id = d.id)"* ]]
+  [[ "$output" == *"'0 3 * * *', 'America/Sao_Paulo', true, '/prod-loja', 14"* ]]
+  [[ "$output" == *"SELECT count(*) FROM novo;" ]]
+}
+
+@test "strip_acl tira GRANT, REVOKE, OWNER TO e DEFAULT PRIVILEGES e mantém o resto" {
+  out="$(printf '%s\n' 'CREATE TABLE public.t (id int);' 'ALTER TABLE public.t OWNER TO mcp_x;' \
+    'GRANT SELECT ON TABLE public.t TO mcp_control_rw;' 'REVOKE ALL ON SCHEMA public FROM PUBLIC;' \
+    'ALTER DEFAULT PRIVILEGES FOR ROLE a GRANT ALL ON TABLES TO b;' 'ALTER TABLE ONLY public.t ADD CONSTRAINT t_pkey PRIMARY KEY (id);' | strip_acl)"
+  [ "$out" = $'CREATE TABLE public.t (id int);\nALTER TABLE ONLY public.t ADD CONSTRAINT t_pkey PRIMARY KEY (id);' ]
+}

@@ -34,10 +34,13 @@ register_consumer pbw_conn_string pgbackweb pgbackweb pgbackweb
 
 docker stack deploy -c "$STACKS_DIR/pgbackweb.yml" pgbackweb >/dev/null
 wait_service_running pgbackweb_pgbackweb
+# Backup local diário do banco padrão do prod; bancos novos entram pelo
+# new-project.sh grant <banco>@prod.
+pbw_register_prod_db postgres
 
 # Verificação
 docker service inspect pgbackweb_pgbackweb >/dev/null || fail "serviço pgbackweb não subiu"
 mark_done 60-backups
 ok "etapa 60 concluída: https://pgbackweb.$KIT_DOMAIN"
-log "falta no painel: database prod, destino R2, agenda diária 03:00, retenção 14 dias (docs/02-cloudflare.md)"
+log "backup local diário às 03:00 já agendado; destino R2 (opcional) no painel (docs/02-cloudflare.md)"
 log "depois do 1º backup: install/ops/restore-test.sh --db <banco> --file <dump>"

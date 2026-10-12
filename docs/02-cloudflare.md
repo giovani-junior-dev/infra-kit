@@ -64,11 +64,11 @@ Backup no próprio servidor não protege contra perder o servidor. Use o R2:
    **Object Read & Write**, só esse bucket. Guarde o Access Key ID e o Secret.
 3. Endpoint: `https://<ACCOUNT_ID>.r2.cloudflarestorage.com`.
 
-No painel do PG Back Web (`https://pgbackweb.seudominio.com`), cadastre:
+Opcional: o backup local diário já vem agendado pela instalação. Para ter
+cópia fora do servidor, no painel do PG Back Web (`https://pgbackweb.seudominio.com`):
 
 - **Destination**: S3, endpoint acima, região `auto`, bucket e as duas chaves;
-- **Database**: o banco de produção, com a role `backup_reader` (veja `backups.md`);
-- **Backup**: agenda diária às 03:00, retenção de 14 dias.
+- **Backup**: troque o destino do backup já cadastrado para esse R2.
 
 Para o `install/ops/restore-test.sh` baixar o último dump, adicione no
 `kit.env` `KIT_R2_ENDPOINT` e `KIT_R2_BUCKET` (não são segredo) e passe as

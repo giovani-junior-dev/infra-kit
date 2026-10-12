@@ -83,6 +83,9 @@ do_grant() {
   n="$(render_grant_sql "$ref" "$agent" | control_sql | tail -n1)"
   [ "$n" = "1" ] || fail "agente $agent não existe em mcp_control.agents (rode a etapa 70)" "$EXIT_PRECONDITION"
   ok "$agent pode usar $ref"
+  # Banco de produção liberado já ganha backup diário.
+  [ "${ref#*@}" = prod ] && pbw_register_prod_db "${ref%@*}"
+  return 0
 }
 
 # Decifra dentro do container do db-mcp, que já tem a chave como secret.

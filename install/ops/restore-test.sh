@@ -55,10 +55,10 @@ log "restaurando $(basename "$FILE") em pg-homolog/$TMP_DB"
 echo "CREATE DATABASE $TMP_DB;" | psql_in pg-homolog
 cid="$(service_container pg-homolog_postgres)"
 case "$FILE" in
-  *.zip)    unzip -p "$FILE" '*.sql' | psql_in pg-homolog "$TMP_DB" >/dev/null ;;
-  *.sql.gz) gunzip -c "$FILE" | psql_in pg-homolog "$TMP_DB" >/dev/null ;;
-  *.sql)    psql_in pg-homolog "$TMP_DB" < "$FILE" >/dev/null ;;
-  *.dump)   docker exec -i "$cid" pg_restore --no-owner -U postgres -d "$TMP_DB" < "$FILE" ;;
+  *.zip)    unzip -p "$FILE" '*.sql' | strip_acl | psql_in pg-homolog "$TMP_DB" >/dev/null ;;
+  *.sql.gz) gunzip -c "$FILE" | strip_acl | psql_in pg-homolog "$TMP_DB" >/dev/null ;;
+  *.sql)    strip_acl < "$FILE" | psql_in pg-homolog "$TMP_DB" >/dev/null ;;
+  *.dump)   docker exec -i "$cid" pg_restore --no-owner --no-acl -U postgres -d "$TMP_DB" < "$FILE" ;;
   *) fail "formato não suportado: $FILE" "$EXIT_CONFIG" ;;
 esac
 

@@ -101,3 +101,9 @@ LS
   [ "$(backup_problem "success|$((30 * 3600))")" = "último backup tem 30 h (limite 26 h)" ]
   [ "$(backup_problem '')" = "nenhum backup encontrado" ]
 }
+
+@test "backup_problem: sem execução, agendamento recente passa e antigo ou ausente falha" {
+  [ -z "$(backup_problem '' 3600)" ]
+  [ "$(backup_problem '' $((30 * 3600)))" = "nenhum backup encontrado" ]
+  [ "$(backup_problem '' '')" = "nenhum backup encontrado" ]
+}
