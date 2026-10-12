@@ -50,9 +50,10 @@ O script cria:
 - apps do Access: portainer e pgbackweb (login com o seu e-mail), db-mcp (só o
   service token `agente-1`) e `db-mcp/approve` (login com o seu e-mail).
 
-No fim ele mostra **uma única vez** o Client Id e o Client Secret do
-`agente-1`. Guarde num gerenciador de senhas. Perdeu? Apague o service token
-em Zero Trust → Access → Service Auth e rode a etapa 30 de novo.
+No fim ele mostra o Client Id do `agente-1` e grava o Client Secret em
+`/opt/infra-kit/agente-1.secret` (só o root lê; o secret não aparece na tela).
+Guarde uma cópia num gerenciador de senhas. Servidor novo sem esse arquivo
+(ex.: VPS recriada)? A etapa 30 gera um secret novo para o mesmo token.
 
 ## 4. Bucket R2 para os backups
 

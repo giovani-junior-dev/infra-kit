@@ -53,23 +53,21 @@ O token **não** vai no chat. Você escolhe:
 - salvar num arquivo no seu computador (ex.: `~/.infra-kit-cf-token`) e o Claude manda o arquivo pelo SSH sem ler; ou
 - digitar num terminal seu, fora do Claude Code, com o comando que o Claude mostrar (o que você digita não aparece na tela).
 
-No fim, a etapa mostra **uma única vez** o Client Id e o Client Secret do agente. Guarde os dois num gerenciador de senhas. Depois você pode apagar o API token na Cloudflare.
+No fim, a etapa mostra o Client Id do agente e grava o Client Secret em `/opt/infra-kit/agente-1.secret` (só o root lê). Depois você pode apagar o API token na Cloudflare.
 
 ## Senhas mostradas uma vez
 
 - Portainer (etapa 40): usuário `admin` e a senha inicial. Troque no primeiro login.
-- Agente do db-mcp (etapa 30): Client Id e Client Secret.
+- Agente do db-mcp (etapa 30): Client Id na tela; Client Secret em `/opt/infra-kit/agente-1.secret`.
 
 As senhas do Postgres nunca aparecem. Quando precisar de uma (ex.: cadastrar o backup), use no servidor `sudo install/ops/show-secret.sh <nome> --mostrar`, num terminal seu.
 
 ## 3. Conectar o Claude Code ao db-mcp
 
-Num terminal seu, **fora do Claude Code** (o secret não pode entrar na conversa):
+Num terminal seu, **fora do Claude Code** (o secret não pode entrar na conversa). O secret vem direto do servidor, sem aparecer:
 
 ```
-read -r -p 'Client Id: ' CID && read -rs -p 'Client Secret: ' CS && echo && \
-claude mcp add --scope user --transport http db-mcp https://db-mcp.seudominio.com/mcp \
-  --header "CF-Access-Client-Id: $CID" --header "CF-Access-Client-Secret: $CS"; unset CID CS
+CS=$(ssh -i ~/.ssh/infra-kit -p 2222 deploy@SEU_IP 'sudo cat /opt/infra-kit/agente-1.secret') && claude mcp add --scope user --transport http db-mcp https://db-mcp.seudominio.com/mcp   --header "CF-Access-Client-Id: SEU_CLIENT_ID" --header "CF-Access-Client-Secret: $CS"; unset CS
 claude mcp get db-mcp
 ```
 

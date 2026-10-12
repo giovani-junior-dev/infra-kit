@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Etapa 60: PG Back Web com banco próprio no pg-prod, sem porta publicada.
-# Destino (R2), agenda e retenção são cadastrados no painel (a API só tem health).
+# Agenda o backup local diário do prod direto no banco do painel; R2 é opcional, pelo painel.
 # shellcheck source=install/lib.sh
 source "$(dirname "$0")/lib.sh"
 
