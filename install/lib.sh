@@ -190,7 +190,7 @@ pbw_register_sql() {
 # Cadastra backup local diário de um banco do pg-prod (via backup_reader).
 # Uso: pbw_register_prod_db <banco>. Reinicia o painel só se criou algo.
 pbw_register_prod_db() {
-  local db="$1" cid pw key n
+  local dbname="$1" cid pw key n
   cid="$(service_container pg-prod_postgres)"
   [ -n "$cid" ] || fail "pg-prod_postgres não está rodando" "$EXIT_PRECONDITION"
   # As tabelas nascem nas migrations do painel, no 1º start.
@@ -200,14 +200,14 @@ pbw_register_prod_db() {
   done
   pw="$(read_secret backup_reader_pw_prod)" || fail "não consegui ler backup_reader_pw_prod"
   key="$(read_secret pbw_encryption_key)" || fail "não consegui ler pbw_encryption_key"
-  n="$(pbw_register_sql "prod-$db" "postgresql://backup_reader:$pw@pg-prod_postgres:5432/$db" "$key" \
+  n="$(pbw_register_sql "prod-$dbname" "postgresql://backup_reader:$pw@pg-prod_postgres:5432/$dbname" "$key" \
        | docker exec -i "$cid" psql -v ON_ERROR_STOP=1 -qtAX -U postgres -d pgbackweb | tail -n1)" \
-    || fail "não consegui cadastrar o backup de $db no PG Back Web"
+    || fail "não consegui cadastrar o backup de $dbname no PG Back Web"
   unset pw key
   if [ "$n" = "1" ]; then
     docker service update --force --detach pgbackweb_pgbackweb >/dev/null
-    ok "backup de $db cadastrado ($PBW_CRON, $PBW_TZ, $PBW_RETENTION_DAYS dias)"
+    ok "backup de $dbname cadastrado ($PBW_CRON, $PBW_TZ, $PBW_RETENTION_DAYS dias)"
   else
-    ok "backup de $db já cadastrado"
+    ok "backup de $dbname já cadastrado"
   fi
 }
