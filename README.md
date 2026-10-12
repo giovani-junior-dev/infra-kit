@@ -4,12 +4,12 @@ Sua própria infraestrutura numa VPS, sem depender de Supabase ou de outro servi
 
 - Docker Swarm + Portainer
 - Postgres de **produção** e de **homologação** (`pg-homolog`)
-- Backups com PG Back Web, guardados no Cloudflare R2
+- Backups diários com PG Back Web, agendados na instalação (cópia no Cloudflare R2 opcional)
 - **db-mcp**: seus agentes de IA (Claude Code) mexem no banco com limites, e o que é perigoso espera a sua aprovação
 
 Nenhuma porta aberta além do SSH. Painéis e MCP ficam atrás do Cloudflare Tunnel + Access.
 
-> Em construção. Plano completo em [`specs/infra-kit.html`](specs/infra-kit.html).
+> Versão estável: `v1.0.0`. Plano completo em [`specs/infra-kit.html`](specs/infra-kit.html).
 
 ## Você precisa de
 

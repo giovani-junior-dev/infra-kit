@@ -1,7 +1,7 @@
 {
   "name": "infra",
   "displayName": "infra-kit",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "description": "Instala e opera o infra-kit na sua VPS: Docker Swarm, Postgres prod e homologação, backups no R2 e db-mcp, tudo atrás do Cloudflare Tunnel.",
   "author": { "name": "giovani-junior-dev" },
   "homepage": "https://github.com/giovani-junior-dev/infra-kit",
