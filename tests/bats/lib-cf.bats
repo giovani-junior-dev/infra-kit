@@ -141,3 +141,20 @@ route() { printf '%s|%s|%s\n' "$1" "$2" "$3" >> "$MOCK_ROUTES"; }
   [ "$status" -eq 0 ]
   [ "$output" = "acc-da-zona" ]
 }
+
+@test "agent_token_action: create sem token, rotate sem secret local, keep com secret" {
+  run agent_token_action "" "$BATS_TEST_TMPDIR/x.secret"; [ "$output" = create ]
+  run agent_token_action s1 "$BATS_TEST_TMPDIR/x.secret"; [ "$output" = rotate ]
+  : > "$BATS_TEST_TMPDIR/x.secret"
+  run agent_token_action s1 "$BATS_TEST_TMPDIR/x.secret"; [ "$output" = rotate ]
+  echo segredo > "$BATS_TEST_TMPDIR/x.secret"
+  run agent_token_action s1 "$BATS_TEST_TMPDIR/x.secret"; [ "$output" = keep ]
+}
+
+@test "cf_rotate_service_token chama POST .../service_tokens/<id>/rotate e devolve o secret" {
+  route POST "/access/service_tokens/s1/rotate" '{"success":true,"result":{"id":"s1","client_id":"c.access","client_secret":"novo"}}'
+  run cf_rotate_service_token s1
+  [ "$status" -eq 0 ]
+  [ "$(jq -r '.client_secret' <<<"$output")" = novo ]
+  grep -q "^POST .*/accounts/acc1/access/service_tokens/s1/rotate$" "$MOCK_CALLS"
+}

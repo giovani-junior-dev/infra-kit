@@ -106,6 +106,22 @@ cf_service_token_client_id() {
   cf_api GET "/accounts/$KIT_CF_ACCOUNT_ID/access/service_tokens?name=$1"     | jq -r --arg n "$1" 'map(select(.name == $n))[0].client_id // empty'
 }
 
+# Gera um secret novo para o service token (o Client ID não muda). O secret
+# anterior expira na hora: só usar quando ele já se perdeu.
+cf_rotate_service_token() {
+  cf_api POST "/accounts/$KIT_CF_ACCOUNT_ID/access/service_tokens/$1/rotate" '{}'
+}
+
+# O que fazer com o service token do agente. Uso: agent_token_action <id> <arquivo_secret>
+# → create (não existe), rotate (existe mas o secret não está neste servidor,
+# ex.: VPS recriada) ou keep.
+agent_token_action() {
+  if [ -z "$1" ]; then echo create
+  elif [ ! -s "$2" ]; then echo rotate
+  else echo keep
+  fi
+}
+
 # Política reutilizável: busca por nome; cria com o payload dado se não existir.
 cf_ensure_policy() {
   local name="$1" payload="$2" id

@@ -54,14 +54,20 @@ TEAM_DOMAIN="$(cf_api GET "/accounts/$KIT_CF_ACCOUNT_ID/access/organizations" | 
 [ -n "$TEAM_DOMAIN" ] || fail "Zero Trust não ativado na conta (veja docs/02-cloudflare.md)" "$EXIT_PRECONDITION"
 set_env_var KIT_CF_TEAM_DOMAIN "$TEAM_DOMAIN"
 
-# Service token: o secret só existe na resposta da criação.
+# Service token: o secret só existe na resposta da criação ou da rotação.
+# Token que já existe sem o secret neste servidor (VPS recriada) é rotacionado.
+AGENT_SECRET_FILE="$KIT_DIR/$SERVICE_TOKEN_NAME.secret"
 NEW_TOKEN_JSON=""
 TOKEN_ID="$(cf_find_service_token "$SERVICE_TOKEN_NAME")"
-if [ -z "$TOKEN_ID" ]; then
-  NEW_TOKEN_JSON="$(cf_api POST "/accounts/$KIT_CF_ACCOUNT_ID/access/service_tokens" \
-    "$(jq -nc --arg n "$SERVICE_TOKEN_NAME" '{name: $n, duration: "8760h"}')")"
-  TOKEN_ID="$(jq -r '.id' <<<"$NEW_TOKEN_JSON")"
-fi
+case "$(agent_token_action "$TOKEN_ID" "$AGENT_SECRET_FILE")" in
+  create)
+    NEW_TOKEN_JSON="$(cf_api POST "/accounts/$KIT_CF_ACCOUNT_ID/access/service_tokens" \
+      "$(jq -nc --arg n "$SERVICE_TOKEN_NAME" '{name: $n, duration: "8760h"}')")"
+    TOKEN_ID="$(jq -r '.id' <<<"$NEW_TOKEN_JSON")" ;;
+  rotate)
+    warn "service token $SERVICE_TOKEN_NAME já existe sem o secret neste servidor: gerando secret novo"
+    NEW_TOKEN_JSON="$(cf_rotate_service_token "$TOKEN_ID")" ;;
+esac
 set_env_var KIT_CF_SERVICE_TOKEN_ID "$TOKEN_ID"
 if [ -n "$NEW_TOKEN_JSON" ]; then
   TOKEN_CLIENT_ID="$(jq -r '.client_id' <<<"$NEW_TOKEN_JSON")"
@@ -96,13 +102,12 @@ ok "etapa 30 concluída"
 # O secret não vai para a tela: a saída desta etapa pode cair na conversa do
 # Claude (plugin) e a Cloudflare não mostra o secret de novo. Fica num arquivo
 # só do root, lido depois pelo aluno no terminal dele.
-AGENT_SECRET_FILE="$KIT_DIR/$SERVICE_TOKEN_NAME.secret"
 if [ -n "$NEW_TOKEN_JSON" ]; then
   (umask 077; jq -r '.client_secret' <<<"$NEW_TOKEN_JSON" > "$AGENT_SECRET_FILE")
   cat <<EOF
 
 =====================================================================
- Credencial do agente criada.
+ Credencial do agente criada (ou secret renovado).
    CF-Access-Client-Id: $(jq -r '.client_id' <<<"$NEW_TOKEN_JSON")
    Client Secret: gravado em $AGENT_SECRET_FILE (só root lê)
  A Cloudflare não mostra o secret de novo: guarde esse arquivo.
