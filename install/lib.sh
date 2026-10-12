@@ -131,3 +131,83 @@ replicas_complete() {
 ensure_sshd_privsep_dir() {
   install -d -m 0755 "${SSHD_PRIVSEP_DIR:-/run/sshd}"
 }
+
+# Valor de um Docker secret no stdout (a CLI do swarm não devolve o valor): um
+# serviço temporário monta o secret, imprime e é removido. Uso: read_secret <nome>
+read_secret() {
+  local name="$1" svc state
+  svc="read-secret-$$-$RANDOM"
+  docker service create --detach --quiet --name "$svc" --secret "$name" \
+    --restart-condition none alpine:3.22 cat "/run/secrets/$name" >/dev/null || return 1
+  for _ in $(seq 1 30); do
+    state="$(docker service ps "$svc" --format '{{.CurrentState}}' | head -n1)"
+    case "$state" in
+      Complete*) break ;;
+      Failed*|Rejected*) docker service rm "$svc" >/dev/null 2>&1; return 1 ;;
+    esac
+    sleep 1
+  done
+  docker service logs --raw "$svc" 2>/dev/null
+  docker service rm "$svc" >/dev/null 2>&1 || true
+}
+
+# Tira do dump SQL (pg_dump texto) as linhas de dono e permissão: o teste de
+# restore roda no pg-homolog, onde roles só do prod (ex.: mcp_control_rw) não
+# existem e o GRANT pararia o psql. Uso: ... | strip_acl
+strip_acl() {
+  grep -vE '^(GRANT|REVOKE) |^ALTER DEFAULT PRIVILEGES |^ALTER .* OWNER TO '
+}
+
+# ---- PG Back Web: cadastro sem o painel ----
+# Mesmo SQL do painel 0.5.2 (internal/service/databases/create_database.sql e
+# backups/create_backup.sql): conexão cifrada com pgp_sym_encrypt e a chave
+# PBW_ENCRYPTION_KEY. O agendador lê a tabela backups ao iniciar (ScheduleAll),
+# por isso o serviço reinicia depois de um cadastro novo.
+PBW_CRON="${PBW_CRON:-0 3 * * *}"
+PBW_TZ="${PBW_TZ:-America/Sao_Paulo}"
+PBW_RETENTION_DAYS="${PBW_RETENTION_DAYS:-14}"
+
+sql_quote() { printf "'%s'" "${1//\'/\'\'}"; }
+
+# Uso: pbw_register_sql <rótulo> <connection_string> <chave> → SQL idempotente;
+# a última linha da saída do psql é o número de backups criados (0 ou 1).
+pbw_register_sql() {
+  local label conn key
+  label="$(sql_quote "$1")"; conn="$(sql_quote "$2")"; key="$(sql_quote "$3")"
+  printf '%s\n' \
+    "INSERT INTO databases (name, connection_string, pg_version)" \
+    "SELECT $label, pgp_sym_encrypt($conn, $key), '16'" \
+    "WHERE NOT EXISTS (SELECT 1 FROM databases WHERE name = $label);" \
+    "WITH novo AS (" \
+    "  INSERT INTO backups (database_id, is_local, name, cron_expression, time_zone, is_active, dest_dir, retention_days)" \
+    "  SELECT d.id, true, $label, $(sql_quote "$PBW_CRON"), $(sql_quote "$PBW_TZ"), true, $(sql_quote "/$1"), $PBW_RETENTION_DAYS" \
+    "  FROM databases d" \
+    "  WHERE d.name = $label AND NOT EXISTS (SELECT 1 FROM backups b WHERE b.database_id = d.id)" \
+    "  RETURNING 1)" \
+    "SELECT count(*) FROM novo;"
+}
+
+# Cadastra backup local diário de um banco do pg-prod (via backup_reader).
+# Uso: pbw_register_prod_db <banco>. Reinicia o painel só se criou algo.
+pbw_register_prod_db() {
+  local db="$1" cid pw key n
+  cid="$(service_container pg-prod_postgres)"
+  [ -n "$cid" ] || fail "pg-prod_postgres não está rodando" "$EXIT_PRECONDITION"
+  # As tabelas nascem nas migrations do painel, no 1º start.
+  for _ in $(seq 1 60); do
+    [ "$(docker exec "$cid" psql -qtAX -U postgres -d pgbackweb -c "SELECT to_regclass('public.backups') IS NOT NULL" 2>/dev/null)" = "t" ] && break
+    sleep 2
+  done
+  pw="$(read_secret backup_reader_pw_prod)" || fail "não consegui ler backup_reader_pw_prod"
+  key="$(read_secret pbw_encryption_key)" || fail "não consegui ler pbw_encryption_key"
+  n="$(pbw_register_sql "prod-$db" "postgresql://backup_reader:$pw@pg-prod_postgres:5432/$db" "$key" \
+       | docker exec -i "$cid" psql -v ON_ERROR_STOP=1 -qtAX -U postgres -d pgbackweb | tail -n1)" \
+    || fail "não consegui cadastrar o backup de $db no PG Back Web"
+  unset pw key
+  if [ "$n" = "1" ]; then
+    docker service update --force --detach pgbackweb_pgbackweb >/dev/null
+    ok "backup de $db cadastrado ($PBW_CRON, $PBW_TZ, $PBW_RETENTION_DAYS dias)"
+  else
+    ok "backup de $db já cadastrado"
+  fi
+}

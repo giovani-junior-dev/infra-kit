@@ -8,29 +8,28 @@ servidores e guarda as senhas nos secrets `backup_reader_pw_prod` e
 Banco criado pelo db-mcp já nasce com `CONNECT` para a `backup_reader`
 (`DB_MCP_BACKUP_ROLE` em `stacks/db-mcp.yml`); `pg_read_all_data` sozinho não dá CONNECT.
 
-## 1. Ler a senha (uma vez)
+## 1. Cadastro automático
 
-No servidor:
+Ninguém cadastra nada no painel. A etapa 60 agenda o backup local do banco
+`postgres` do prod, e `sudo install/ops/new-project.sh grant <banco>@prod`
+agenda o do banco liberado. Padrão: todo dia às 03:00 (`America/Sao_Paulo`),
+14 dias de retenção, em `/backups/prod-<banco>/` no volume do PG Back Web.
+A senha da `backup_reader` vai do secret direto para o banco do painel,
+cifrada como o próprio painel faz; ela não aparece na tela.
+
+Rodar de novo não duplica. Para ver ou rodar na hora: `https://pgbackweb.seudominio.com`
+→ **Backups** → **Run backup now**.
+
+## 2. Cópia fora do servidor (opcional)
+
+Destino R2: veja `02-cloudflare.md`, seção 4. Se precisar da senha da
+`backup_reader` (ex.: cadastrar um banco do homolog à mão), no servidor:
 
 ```bash
 sudo install/ops/show-secret.sh backup_reader_pw_prod --mostrar
-sudo install/ops/show-secret.sh backup_reader_pw_homolog --mostrar
 ```
 
-Sem `--mostrar` o comando não imprime nada. Copie a senha direto para o
-painel e não cole em chat nem em arquivo.
-
-## 2. Cadastrar no painel
-
-Em `https://pgbackweb.seudominio.com` → **Databases** → **Add database**, uma
-para cada banco que você quer copiar, com versão 16:
-
-| Servidor | Connection string |
-|---|---|
-| prod | `postgresql://backup_reader:<senha>@pg-prod_postgres:5432/<banco>` |
-| homolog | `postgresql://backup_reader:<senha>@pg-homolog_postgres:5432/<banco>` |
-
-Destino R2, agenda e retenção: veja `02-cloudflare.md`, seção 4.
+Sem `--mostrar` o comando não imprime nada. Copie direto para o painel.
 
 ## 3. Conferir que o backup restaura
 
@@ -38,7 +37,8 @@ Destino R2, agenda e retenção: veja `02-cloudflare.md`, seção 4.
 sudo install/ops/restore-test.sh --db <banco> --file <dump>
 ```
 
-O teste restaura num banco temporário no pg-homolog, compara a quantidade de
+O teste restaura num banco temporário no pg-homolog (sem as linhas de dono e
+GRANT, porque roles só do prod não existem lá), compara a quantidade de
 tabelas com o prod (lida como `backup_reader`) e apaga o temporário.
 
 ## Troca de senha

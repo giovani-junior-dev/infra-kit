@@ -77,7 +77,7 @@ Esperado: `✔ Connected`.
 
 ## 4. Backups
 
-Cadastre no painel `https://pgbackweb.seudominio.com` o destino R2, o banco e a agenda: [backups.md](backups.md). Depois do primeiro backup, teste a restauração (mesmo arquivo).
+A etapa 60 já agenda um backup local diário (03:00, 14 dias) do prod, e cada banco liberado com `new-project.sh grant <banco>@prod` ganha o seu. Nada para cadastrar no painel. Depois do primeiro backup, teste a restauração: [backups.md](backups.md). Cópia fora do servidor (R2) é opcional: `02-cloudflare.md`, seção 4.
 
 ## 5. Conferir
 

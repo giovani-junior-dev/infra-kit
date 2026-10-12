@@ -75,9 +75,12 @@ replicas_bad() {
 }
 
 # "status|idade_em_segundos" do último backup → vazio se ok, senão o motivo.
+# 2º argumento: idade em segundos do agendamento ativo mais antigo (vazio = nenhum).
+# Sem execução ainda, agendamento com menos de 26 h não é problema.
 backup_problem() {
-  local status="${1%%|*}" age="${1#*|}"
-  if [ -z "$1" ]; then echo "nenhum backup encontrado"
+  local status="${1%%|*}" age="${1#*|}" sched="${2:-}"
+  if [ -z "$1" ] && [ -n "$sched" ] && [ "$sched" -le "$BACKUP_MAX_AGE_S" ]; then return 0
+  elif [ -z "$1" ]; then echo "nenhum backup encontrado"
   elif [ "$status" != "success" ]; then echo "último backup terminou com status $status"
   elif [ "$age" -gt "$BACKUP_MAX_AGE_S" ]; then echo "último backup tem $((age / 3600)) h (limite 26 h)"
   fi
@@ -193,7 +196,7 @@ check_replicas() {
 }
 
 check_backup() {
-  local cid row problem
+  local cid row problem sched=""
   cid="$(service_container pg-prod_postgres)"
   if [ -z "$cid" ]; then
     flunk backup.latest "Postgres de produção fora do ar; não deu para ler os backups" "rode de novo a etapa 50"
@@ -206,8 +209,13 @@ check_backup() {
     flunk backup.latest "não consegui ler o histórico do PG Back Web" "confira a etapa 60 e o painel https://pgbackweb.${KIT_DOMAIN:-}"
     return
   }
-  problem="$(backup_problem "$row")"
-  if [ -z "$problem" ]; then pass backup.latest "último backup ok, feito há menos de 26 h"
+  if [ -z "$row" ]; then
+    sched="$(docker exec -i "$cid" psql -qtAX -U backup_reader -d pgbackweb -c \
+      "SELECT extract(epoch FROM now() - min(created_at))::bigint FROM backups WHERE is_active" 2>/dev/null)"
+  fi
+  problem="$(backup_problem "$row" "$sched")"
+  if [ -z "$problem" ] && [ -z "$row" ]; then pass backup.latest "backup diário agendado; o 1º roda às 03:00"
+  elif [ -z "$problem" ]; then pass backup.latest "último backup ok, feito há menos de 26 h"
   else flunk backup.latest "$problem" "abra https://pgbackweb.${KIT_DOMAIN:-}, confira a agenda diária e rode \"Run backup now\""; fi
 }
 

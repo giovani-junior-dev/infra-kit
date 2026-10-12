@@ -132,7 +132,7 @@ Mostra a senha inicial do Portainer uma vez. Mesmo cuidado: o aluno guarda, voc�
 
 ### Etapa 60
 
-Depois dela o aluno cadastra no painel do PG Back Web o destino R2, o banco e a agenda (`docs/backups.md` e `docs/02-cloudflare.md`, seção 4). Pode fazer depois; avise que backup não configurado é o primeiro vermelho do `/infra:verificar`.
+Ela já agenda o backup local diário do prod; nada para cadastrar no painel. Cópia no R2 é opcional (`docs/02-cloudflare.md`, seção 4).
 
 ## 6. Quando uma etapa falha
 

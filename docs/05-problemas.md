@@ -55,10 +55,11 @@ Problemas que já aconteceram com a gente, em servidor de verdade. Antes de qual
 
 ## O /infra:verificar acusa "nenhum backup encontrado"
 
-O PG Back Web está instalado, mas ainda não tem backup cadastrado ou nunca rodou.
-Abra `https://pgbackweb.<seu-dominio>`, cadastre o banco (veja `docs/backups.md`),
-crie o backup com agenda diária e clique em **Run backup now**. O item fica verde
-quando existe um backup com sucesso de menos de 26 horas.
+Nas primeiras 26 horas depois da instalação o item fica verde só com o backup
+agendado (o 1º roda às 03:00). Depois disso, falta um backup com sucesso recente:
+rode de novo a etapa 60 (recadastra o que faltar) e, em
+`https://pgbackweb.<seu-dominio>` → **Backups**, clique em **Run backup now** e
+veja o erro em **Executions**.
 
 ## Uma etapa falhou
 
