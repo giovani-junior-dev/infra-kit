@@ -21,15 +21,9 @@ Chame `db_create_database` com `name`, `env: "hml"` e um `reason` curto. Volta u
 - Mostre o link e diga: **vale 30 minutos**. Passou, peça de novo (o pedido antigo fica `expired`).
 - Acompanhe com `db_pending` (o `op_id` veio na resposta) até `executed`. Não repita o pedido enquanto estiver `pending`.
 
-## 3. Liberar o alvo para o agente
+## 3. Acesso do agente
 
-Por segurança o banco nasce sem nenhum agente com acesso. O dono libera, no servidor:
-
-```
-ssh -i <chave> -p <porta> <admin>@<ip> 'sudo bash /opt/infra-kit/src/install/ops/new-project.sh grant <nome>@hml'
-```
-
-(o agente é o Client ID do service token, lido de `KIT_CF_SERVICE_TOKEN_CLIENT_ID` no `kit.env`; um terceiro argumento opcional troca por outro Client ID). Peça OK antes de rodar.
+Aprovada a criação, o alvo `<nome>@hml` já fica liberado para o agente que pediu. Nada para rodar no servidor. Confira com um `db_query` simples (`SELECT 1`). Outro agente (outro service token) só ganha acesso com `new-project.sh grant <nome>@hml <client_id>` no servidor; peça OK antes.
 
 ## 4. Estrutura em homologação
 
@@ -44,7 +38,7 @@ Quando o aluno disser que está pronto:
 
 1. `db_promote_project` com `from: "<nome>@hml"`, e `copy_tables` só com as tabelas de dados que precisam ir (ex.: tabela de categorias). Nunca copie dados de teste por padrão.
 2. Link de aprovação (30 min). Depois de `executed`, o alvo `<nome>@prod` existe com as mesmas migrations.
-3. Liberar o alvo prod ao agente, se for usar: `new-project.sh grant <nome>@prod`.
+3. O alvo prod já vem liberado para o agente. Peça ao dono para rodar no servidor `new-project.sh grant <nome>@prod`: é o que **agenda o backup diário** do banco novo (peça OK antes).
 
 Em produção toda DDL vira pedido. Mudanças futuras: faça em hml e leve com `db_migrations_promote` (`from` hml, `to` prod).
 

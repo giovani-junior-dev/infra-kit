@@ -52,6 +52,9 @@ export async function createRuntime(cfg: RuntimeConfig) {
     const created = await createDatabase(adminDsn, name, env, cfg.backupRole)
     await store.saveTarget(created.target, cfg.targetsKey, opId)
     targets.set(targetRef(created.target), created.target)
+    // O dono já aprovou a criação: o agente que pediu sai com o alvo liberado.
+    const op = await store.getOp(opId)
+    if (op) await store.grantTarget(op.agentId, targetRef(created.target))
     return { database: name, roles: created.roles }
   }
 

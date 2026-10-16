@@ -25,9 +25,9 @@ Confere SSH, firewall, portas abertas, serviços, senhas fora de texto, diferen�
 O caminho é sempre o mesmo:
 
 1. O Claude pede o banco em **homologação** (`db_create_database`). Você recebe um link e aprova (vale 30 minutos).
-2. No servidor, você libera o banco para o agente: `sudo install/ops/new-project.sh grant loja@hml`.
+2. Aprovado, o banco já fica liberado para o agente que pediu. Nada para rodar no servidor.
 3. O Claude cria tabelas em homologação. Apagar ou renomear coisa pede a sua aprovação.
-4. Pronto para produção: o Claude pede `db_promote_project`. Você aprova pelo link.
+4. Pronto para produção: o Claude pede `db_promote_project`. Você aprova pelo link. Depois agende o backup do banco novo: `sudo install/ops/new-project.sh grant loja@prod`.
 5. A connection string do app vira um Docker secret, sem passar pelo chat:
    `sudo install/ops/new-project.sh app-secret loja@prod`.
 
