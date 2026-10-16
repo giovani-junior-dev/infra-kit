@@ -166,6 +166,14 @@ export class ControlStore {
     )
   }
 
+  /** Libera o alvo (nome@env) para o agente; idempotente. */
+  async grantTarget(clientId: string, ref: string): Promise<void> {
+    await this.pool.query(
+      'UPDATE agents SET targets = array_append(targets, $2) WHERE client_id = $1 AND NOT ($2 = ANY(targets))',
+      [clientId, ref],
+    )
+  }
+
   async listTargets(key: Buffer): Promise<Target[]> {
     const { rows } = await this.pool.query('SELECT * FROM targets ORDER BY name, env')
     return rows.map((r) => makeTarget(r.name, r.env, {

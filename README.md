@@ -299,10 +299,10 @@ São 18 itens: SSH, firewall, portas, senhas fora de texto, se cada stack em uso
 Exemplo de conversa: *"crie um banco chamado `loja` com uma tabela de produtos"*. O caminho é sempre este:
 
 1. O Claude pede o banco **em homologação**. Você recebe um **link de aprovação** (vale 30 minutos), abre, entra com seu e-mail e aprova.
-2. O Claude pede para liberar o banco ao agente. No servidor: `sudo /opt/infra-kit/src/install/ops/new-project.sh grant loja@hml`.
+2. Aprovado, o banco já fica liberado para o Claude que pediu. Nada para rodar no servidor.
 3. O Claude cria as tabelas e testa com dados em homologação.
 4. Pronto para produção: o Claude pede a **promoção** (`loja@hml` → `loja@prod`). Você aprova pelo link.
-5. Libere produção ao agente: `sudo /opt/infra-kit/src/install/ops/new-project.sh grant loja@prod`. Esse comando **também agenda o backup diário** do banco novo.
+5. Agende o backup diário do banco novo, no servidor: `sudo /opt/infra-kit/src/install/ops/new-project.sh grant loja@prod`. (O acesso do Claude a produção já vem liberado na aprovação.)
 6. Para o seu app usar o banco, gere a conexão como Docker secret (sem passar pelo chat): `sudo /opt/infra-kit/src/install/ops/new-project.sh app-secret loja@prod`. Ele imprime um modelo de stack pronto.
 
 ### Passo 12 · Subir o seu app (servidor)

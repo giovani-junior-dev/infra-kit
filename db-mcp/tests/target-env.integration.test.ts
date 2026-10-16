@@ -59,6 +59,7 @@ describe.skipIf(!ADMIN || !HML_ADMIN)('db-mcp alvos nome@env em dois servidores'
       await run(url, `CREATE ROLE dbmcp_tenv_admin LOGIN PASSWORD 'pw' CREATEDB CREATEROLE`)
     }
     const controlDsn = await createControlDb(ADMIN!, CONTROL)
+    await run(controlDsn, "INSERT INTO agents (client_id, name, targets) VALUES ('cid', 'agente-it', '{}')")
     rt = await createRuntime({
       targets: new Map(),
       controlDsn,
@@ -79,6 +80,8 @@ describe.skipIf(!ADMIN || !HML_ADMIN)('db-mcp alvos nome@env em dois servidores'
   it('cria teste@hml e prepara o projeto', async () => {
     expect(await approve(opId(await h().db_create_database({ name: 'teste', env: 'hml', reason: 'it' })))).toMatchObject({ status: 'executed' })
     expect(rt.targets.get('teste@hml')).toMatchObject({ name: 'teste', env: 'hml' })
+    // O agente que pediu já sai com o alvo liberado: sem passo manual de grant.
+    expect((await rt.store.getAgent('cid'))?.targets).toEqual(['teste@hml'])
     for (const sql of [
       'CREATE TABLE produtos (id int PRIMARY KEY, nome text NOT NULL)',
       'CREATE TABLE clientes (id int PRIMARY KEY, nome text)',
@@ -110,6 +113,7 @@ describe.skipIf(!ADMIN || !HML_ADMIN)('db-mcp alvos nome@env em dois servidores'
     expect(await rows('teste@prod', 'SELECT count(*)::int AS n FROM clientes')).toEqual([{ n: 0 }])
     const saved = (await run(withDb(ADMIN!, CONTROL), 'SELECT name, env FROM targets ORDER BY env')).rows
     expect(saved).toEqual([{ name: 'teste', env: 'hml' }, { name: 'teste', env: 'prod' }])
+    expect((await rt.store.getAgent('cid'))?.targets).toEqual(['teste@hml', 'teste@prod'])
   })
 
   it('depois do promote, INSERT em prod pega max(id)+1 (serial e identity); tabela vazia começa em 1', async () => {
